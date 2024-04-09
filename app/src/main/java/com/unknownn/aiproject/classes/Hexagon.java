@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Hexagon {
-    private final Point leftTop, topMiddle,  rightTop,  rightBottom,  bottomMiddle,  leftBottom;
+    final Point leftTop, topMiddle,  rightTop,  rightBottom,  bottomMiddle,  leftBottom;
     private Path strokePath = null;
     private Path fillablePath = null;
     private final List<Point> points = new ArrayList<>();

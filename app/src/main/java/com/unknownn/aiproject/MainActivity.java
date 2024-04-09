@@ -1,7 +1,6 @@
 package com.unknownn.aiproject;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;

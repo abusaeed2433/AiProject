@@ -6,6 +6,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -21,12 +22,18 @@ import java.util.Queue;
 public class GameBoard extends View {
     private static final long CLICK_DURATION = 300;
     public static final float STROKE_WIDTH = 4f;
+    public static final float BOUNDARY_GAP = 12f;
+
     private static final int N = 7;
     private final CellState[][] states = new CellState[N][N];
+
     private final Paint gridBrush = new Paint();
     private final Paint blueBrush = new Paint();
     private final Paint redBrush = new Paint();
     private final Paint textBrush = new Paint();
+
+    private final Paint boundaryBrush = new Paint();
+
     private float HEIGHT_PAD = 0, WIDTH_PAD = 0;
     private float CELL_WIDTH = 0, CELL_HEIGHT = 0;
     private float CELL_RECT_HEIGHT = 0;
@@ -34,6 +41,10 @@ public class GameBoard extends View {
     private boolean redTurn = true;
     private BoardListener boardListener = null;
     private boolean isTheFirstMove = true;
+
+    // horizontal and vertical boundary
+    private final Path horizPath = new Path();
+    private final Path vertPath = new Path();
 
     // for whose move
     private float circleRadius = 0f;
@@ -83,6 +94,13 @@ public class GameBoard extends View {
         if(circleCenter.x != 0) {
             canvas.drawCircle(circleCenter.x, circleCenter.y, circleRadius, redTurn ? redBrush : blueBrush);
         }
+
+        // vertical boundary
+        boundaryBrush.setColor(Color.RED);
+        canvas.drawPath(vertPath, boundaryBrush);
+
+        boundaryBrush.setColor(Color.BLUE);
+        canvas.drawPath(horizPath, boundaryBrush);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -144,7 +162,7 @@ public class GameBoard extends View {
     }
 
     private void initBrush(){
-        final Paint[] brushes = new Paint[]{ gridBrush, redBrush, blueBrush };
+        final Paint[] brushes = new Paint[]{ gridBrush, redBrush, blueBrush, boundaryBrush };
 
         for(Paint brush : brushes) {
             brush.setAntiAlias(true);
@@ -160,6 +178,11 @@ public class GameBoard extends View {
 
         gridBrush.setStyle(Paint.Style.STROKE);
 
+        boundaryBrush.setStyle(Paint.Style.STROKE);
+        boundaryBrush.setColor(Color.GRAY);
+        boundaryBrush.setStrokeWidth(2*STROKE_WIDTH);
+
+        // text brush
         textBrush.setColor(Color.BLACK);
         textBrush.setTextAlign(Paint.Align.CENTER);
         textBrush.setStyle(Paint.Style.FILL);
@@ -200,8 +223,61 @@ public class GameBoard extends View {
             }
 
             initWhoseMovePath();
+            initTwoBoundaries();
             invalidate();
         });
+    }
+
+    private void initTwoBoundaries(){
+
+        vertPath.reset();
+        horizPath.reset();
+
+        vertPath.moveTo( states[0][0].hexagon.leftTop.x - BOUNDARY_GAP, states[0][0].hexagon.leftTop.y );
+        horizPath.moveTo( states[0][0].hexagon.leftTop.x, states[0][0].hexagon.leftTop.y - BOUNDARY_GAP);
+
+        // left and top
+        for(int y=0; y<N; y++){
+            CellState vertCell = states[0][y];
+
+            Point point1, point2;
+            point1 = vertCell.hexagon.leftBottom;
+            point2 = vertCell.hexagon.bottomMiddle;
+
+            vertPath.lineTo(point1.x - BOUNDARY_GAP, point1.y + BOUNDARY_GAP/2);
+            if(y != N-1) {
+                vertPath.lineTo(point2.x - BOUNDARY_GAP, point2.y + BOUNDARY_GAP/2);
+            }
+
+            // for horiz
+            CellState horizCell = states[y][0];
+            point1 = horizCell.hexagon.topMiddle;
+            point2 = horizCell.hexagon.rightTop;
+            horizPath.lineTo(point1.x, point1.y - BOUNDARY_GAP);
+            horizPath.lineTo(point2.x, point2.y - BOUNDARY_GAP);
+        }
+
+        // right and bottom
+        vertPath.moveTo( states[N-1][0].hexagon.rightTop.x + BOUNDARY_GAP, states[N-1][0].hexagon.rightTop.y );
+        horizPath.moveTo( states[0][N-1].hexagon.leftBottom.x, states[0][N-1].hexagon.leftBottom.y + BOUNDARY_GAP );
+
+        for(int y=0; y<N; y++){
+            CellState vertCell = states[N-1][y];
+
+            Point point1, point2;
+            point1 = vertCell.hexagon.rightTop;
+            point2 = vertCell.hexagon.rightBottom;
+
+            vertPath.lineTo(point1.x + BOUNDARY_GAP, point1.y - BOUNDARY_GAP/2);
+            vertPath.lineTo(point2.x + BOUNDARY_GAP, point2.y - BOUNDARY_GAP/2);
+
+            // for horizontal
+            CellState horizCell = states[y][N-1];
+            point1 = horizCell.hexagon.bottomMiddle;
+            point2 = horizCell.hexagon.rightBottom;
+            horizPath.lineTo(point1.x, point1.y + BOUNDARY_GAP);
+            horizPath.lineTo(point2.x, point2.y + BOUNDARY_GAP);
+        }
     }
 
     private void initWhoseMovePath(){

@@ -7,7 +7,7 @@ import android.graphics.Point;
 public class CellState {
     final int x,y;
     private MyColor myColor;
-    private final Hexagon hexagon;
+    final Hexagon hexagon;
 
     public CellState(int x, int y, Hexagon hexagon) {
         this.x = x;
