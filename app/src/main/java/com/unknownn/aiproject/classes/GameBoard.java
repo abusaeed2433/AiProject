@@ -1,14 +1,17 @@
 package com.unknownn.aiproject.classes;
 
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,7 +25,8 @@ public class GameBoard extends View {
     private static final int N = 7;
     private final CellState[][] states = new CellState[N][N];
     private final Paint gridBrush = new Paint();
-    private final Paint cellBrush = new Paint();
+    private final Paint blueBrush = new Paint();
+    private final Paint redBrush = new Paint();
     private final Paint textBrush = new Paint();
     private float HEIGHT_PAD = 0, WIDTH_PAD = 0;
     private float CELL_WIDTH = 0, CELL_HEIGHT = 0;
@@ -31,6 +35,10 @@ public class GameBoard extends View {
     private boolean redTurn = true;
     private BoardListener boardListener = null;
     private boolean isTheFirstMove = true;
+
+    // for whose move
+    private float circleRadius = 0f;
+    private final Point circleCenter = new Point(0,0);
 
     public GameBoard(Context context) {
         super(context);
@@ -67,10 +75,14 @@ public class GameBoard extends View {
                 canvas.drawText(i+" "+j, pt.x,pt.y,textBrush);
 
                 if(!cell.isBlank()) {
-                    cellBrush.setColor(cell.getBrushColor());
-                    canvas.drawPath(cell.getFillablePath(), cellBrush);
+                    canvas.drawPath( cell.getFillablePath(), cell.isRed() ? redBrush : blueBrush );
                 }
             }
+        }
+
+        // whose turn color
+        if(circleCenter.x != 0) {
+            canvas.drawCircle(circleCenter.x, circleCenter.y, circleRadius, redTurn ? redBrush : blueBrush);
         }
     }
 
@@ -133,19 +145,21 @@ public class GameBoard extends View {
     }
 
     private void initBrush(){
-        final Paint[] brushes = new Paint[]{ gridBrush, cellBrush };
+        final Paint[] brushes = new Paint[]{ gridBrush, redBrush, blueBrush };
 
         for(Paint brush : brushes) {
             brush.setAntiAlias(true);
             brush.setColor(Color.BLACK);
-            brush.setStyle(Paint.Style.STROKE);
+            brush.setStyle(Paint.Style.FILL);
             brush.setStrokeCap(Paint.Cap.ROUND);
             brush.setStrokeJoin(Paint.Join.ROUND);
             brush.setStrokeWidth(STROKE_WIDTH);
         }
 
-        cellBrush.setColor(Color.GRAY);
-        cellBrush.setStyle(Paint.Style.FILL);
+        redBrush.setColor(Color.RED);
+        blueBrush.setColor(Color.BLUE);
+
+        gridBrush.setStyle(Paint.Style.STROKE);
 
         textBrush.setColor(Color.BLACK);
         textBrush.setTextAlign(Paint.Align.CENTER);
@@ -185,8 +199,40 @@ public class GameBoard extends View {
                     states[x][y] = new CellState(x,y, hexagon);
                 }
             }
+
+            initWhoseMovePath();
             invalidate();
         });
+    }
+
+    private void initWhoseMovePath(){
+
+        int width = getWidth();
+        int height = getHeight();
+
+        float left = width * 0.9f;
+        float right = width * 0.92f;
+        float top = height * 0.1f;
+        float bottom = height * 0.15f;
+
+        float rad1 = right-left;
+        float rad2 = bottom - top;
+
+        circleRadius = Math.min(rad1,rad2);
+        circleCenter.x = (int)( (left+right)/2f);
+        circleCenter.y = (int)( (top+bottom)/2f );
+
+        ValueAnimator animator = ValueAnimator.ofFloat(circleRadius*0.8f, circleRadius);
+        animator.setDuration(1500L);
+        animator.setInterpolator(new LinearInterpolator());
+
+        animator.addUpdateListener(valueAnimator -> {
+            circleRadius = (float) valueAnimator.getAnimatedValue();
+            invalidate();
+        });
+        animator.setRepeatCount(ValueAnimator.INFINITE);
+        animator.setRepeatMode(ValueAnimator.REVERSE);
+        animator.start();
     }
 
     private boolean isConnectedToEnd(CellState startCell){

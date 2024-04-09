@@ -36,6 +36,10 @@ public class CellState {
         return hexagon.contains(x,y);
     }
 
+    public boolean isRed(){
+        return myColor == MyColor.RED;
+    }
+
     public MyColor getMyColor() {
         return myColor;
     }
