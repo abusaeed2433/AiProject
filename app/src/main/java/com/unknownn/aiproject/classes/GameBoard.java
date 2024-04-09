@@ -27,7 +27,7 @@ public class GameBoard extends View {
     private long downTime = 0L;
     private boolean redTurn = true;
     private BoardListener boardListener = null;
-
+    private boolean isTheFirstMove = true;
 
     public GameBoard(Context context) {
         super(context);
@@ -107,7 +107,17 @@ public class GameBoard extends View {
 
         if(clickedCell == null) return;
 
+
         if(!clickedCell.isBlank()){
+
+            if(isTheFirstMove && !redTurn){
+                clickedCell.setMyColor( CellState.MyColor.BLUE );
+                redTurn = !redTurn;
+                isTheFirstMove = false;
+                invalidate();
+                return;
+            }
+
             if(boardListener != null) boardListener.onMessageToShow("Invalid cell");
             return;
         }
