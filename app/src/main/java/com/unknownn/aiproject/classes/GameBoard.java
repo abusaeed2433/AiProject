@@ -189,7 +189,7 @@ public class GameBoard extends View {
         final int left = (int)(x * CELL_WIDTH + leftPadding);
         final int right = (int)(left + CELL_WIDTH);
 
-        final int top = (int)(y * CELL_HEIGHT + HEIGHT_PAD - y * triangleHeight);
+        final int top = (int)(y * CELL_HEIGHT + HEIGHT_PAD - y * triangleHeight - (y == 0 ? 0 : STROKE_WIDTH/2) );
         final int bottom = (int)(top + CELL_RECT_HEIGHT);
 
         Point leftTop = new Point(left,top);
