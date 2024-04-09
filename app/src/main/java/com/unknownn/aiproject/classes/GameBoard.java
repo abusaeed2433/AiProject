@@ -155,9 +155,11 @@ public class GameBoard extends View {
             return;
         }
 
-        isTheFirstMove = false;
         clickedCell.setMyColor( redTurn ? CellState.MyColor.RED : CellState.MyColor.BLUE );
         redTurn = !redTurn;
+        if(redTurn){
+            isTheFirstMove = false;
+        }
         invalidate();
         checkForGameOver();
     }
@@ -323,7 +325,7 @@ public class GameBoard extends View {
             CellState curCell = queue.poll();
             if(curCell == null) continue;
 
-            visited[curCell.x][curCell.y] = true;
+            visited[curCell.x][curCell.y] = true; // todo take outside
 
             final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
 
@@ -366,7 +368,7 @@ public class GameBoard extends View {
 
             if(isNotConnectedToEnd(startCell, true)) continue;
             if( boardListener != null) boardListener.onGameEnds(startCell.getMyColor());
-            break;
+            return;
         }
 
         // top to bottom for Blue
