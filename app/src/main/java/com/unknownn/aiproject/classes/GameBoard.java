@@ -6,7 +6,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.Point;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -235,8 +234,8 @@ public class GameBoard extends View {
         animator.start();
     }
 
-    private boolean isConnectedToEnd(CellState startCell){
-        if(startCell.isBlank()) return false;
+    private boolean isNotConnectedToEnd(CellState startCell, boolean horizontal){
+        if(startCell.isBlank()) return true;
 
         final Queue<CellState> queue = new LinkedList<>();
 
@@ -260,12 +259,14 @@ public class GameBoard extends View {
                 final CellState adjCell = states[row][col];
                 if( curCell.getMyColor() == adjCell.getMyColor() && !visited[adjCell.x][adjCell.y] ){
 
-                    if(adjCell.x == N-1) return true;
+                    if( horizontal && (adjCell.x == N-1) ) return false;
+
+                    if( !horizontal && (adjCell.y == N-1) ) return false;
                     queue.add(adjCell);
                 }
             }
         }
-        return false;
+        return true;
     }
 
     public void restart(){
@@ -280,11 +281,19 @@ public class GameBoard extends View {
     }
 
     private void checkForGameOver(){
+
+        // left to right
         for(int y=0; y<N; y++){
-
             CellState startCell = states[0][y];
-            if( !isConnectedToEnd(startCell) ) continue;
+            if(isNotConnectedToEnd(startCell, true)) continue;
+            if( boardListener != null) boardListener.onGameEnds(startCell.getMyColor());
+            break;
+        }
 
+        // top to bottom
+        for(int y=0; y<N; y++){
+            CellState startCell = states[y][0];
+            if(isNotConnectedToEnd(startCell, false)) continue;
             if( boardListener != null) boardListener.onGameEnds(startCell.getMyColor());
             break;
         }
