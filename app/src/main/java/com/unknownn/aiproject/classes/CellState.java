@@ -2,19 +2,17 @@ package com.unknownn.aiproject.classes;
 
 import android.graphics.Color;
 import android.graphics.Path;
-import android.graphics.Rect;
+import android.graphics.Point;
 
 public class CellState {
     final int x,y;
     private MyColor myColor;
-    private final Rect boundary;
-    final Path cellPath;
+    private final Hexagon hexagon;
 
-    public CellState(int x, int y, Rect rect, Path cellPath) {
+    public CellState(int x, int y, Hexagon hexagon) {
         this.x = x;
         this.y = y;
-        this.boundary = rect;
-        this.cellPath = cellPath;
+        this.hexagon = hexagon;
         this.myColor = MyColor.BLANK;
     }
 
@@ -30,8 +28,19 @@ public class CellState {
         return Color.BLUE;
     }
 
-    public Rect getBoundary() {
-        return boundary;
+    public boolean isPointInside(float x, float y){
+        return hexagon.contains(x,y);
+    }
+
+    public Path getStrokePath() {
+        return hexagon.getStrokePath();
+    }
+
+    public Point getTextCenter(){
+        return hexagon.getCenter();
+    }
+    public Path getFillablePath(){
+        return hexagon.getFillablePath();
     }
 
     public enum MyColor { RED, BLUE, BLANK }
