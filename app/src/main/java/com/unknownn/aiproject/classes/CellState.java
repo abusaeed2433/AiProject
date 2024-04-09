@@ -39,6 +39,9 @@ public class CellState {
     public boolean isRed(){
         return myColor == MyColor.RED;
     }
+    public boolean isBlue(){
+        return myColor == MyColor.BLUE;
+    }
 
     public MyColor getMyColor() {
         return myColor;

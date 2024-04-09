@@ -155,6 +155,7 @@ public class GameBoard extends View {
             return;
         }
 
+        isTheFirstMove = false;
         clickedCell.setMyColor( redTurn ? CellState.MyColor.RED : CellState.MyColor.BLUE );
         redTurn = !redTurn;
         invalidate();
@@ -358,17 +359,21 @@ public class GameBoard extends View {
 
     private void checkForGameOver(){
 
-        // left to right
+        // left to right for Red
         for(int y=0; y<N; y++){
             CellState startCell = states[0][y];
+            if( !startCell.isRed() ) continue;
+
             if(isNotConnectedToEnd(startCell, true)) continue;
             if( boardListener != null) boardListener.onGameEnds(startCell.getMyColor());
             break;
         }
 
-        // top to bottom
+        // top to bottom for Blue
         for(int y=0; y<N; y++){
             CellState startCell = states[y][0];
+            if( !startCell.isBlue() ) continue;
+
             if(isNotConnectedToEnd(startCell, false)) continue;
             if( boardListener != null) boardListener.onGameEnds(startCell.getMyColor());
             break;
