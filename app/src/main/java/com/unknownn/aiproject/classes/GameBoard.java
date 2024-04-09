@@ -13,6 +13,9 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 public class GameBoard extends View {
     private static final long CLICK_DURATION = 300;
     public static final float STROKE_WIDTH = 4f;
@@ -115,6 +118,7 @@ public class GameBoard extends View {
                 redTurn = !redTurn;
                 isTheFirstMove = false;
                 invalidate();
+                checkForGameOver();
                 return;
             }
 
@@ -125,6 +129,7 @@ public class GameBoard extends View {
         clickedCell.setMyColor( redTurn ? CellState.MyColor.RED : CellState.MyColor.BLUE );
         redTurn = !redTurn;
         invalidate();
+        checkForGameOver();
     }
 
     private void initBrush(){
@@ -184,6 +189,62 @@ public class GameBoard extends View {
         });
     }
 
+    private boolean isConnectedToEnd(CellState startCell){
+        if(startCell.isBlank()) return false;
+
+        final Queue<CellState> queue = new LinkedList<>();
+
+        queue.add(startCell);
+        final boolean[][] visited = new boolean[N][N];
+
+        while ( !queue.isEmpty() ){
+            CellState curCell = queue.poll();
+            if(curCell == null) continue;
+
+            visited[curCell.x][curCell.y] = true;
+
+            final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
+
+            for(int[] offset : offsets){
+                int row = curCell.x + offset[0];
+                int col = curCell.y + offset[1];
+
+                if(row < 0 || row >= N || col < 0 || col >= N) continue;
+
+                final CellState adjCell = states[row][col];
+                if( curCell.getMyColor() == adjCell.getMyColor() && !visited[adjCell.x][adjCell.y] ){
+
+                    if(adjCell.x == N-1) return true;
+                    queue.add(adjCell);
+                }
+            }
+        }
+        return false;
+    }
+
+    public void restart(){
+        redTurn = true;
+        isTheFirstMove = true;
+        for(CellState[] row : states){
+            for(CellState cell : row){
+                cell.reset();
+            }
+        }
+        invalidate();
+    }
+
+    private void checkForGameOver(){
+        for(int y=0; y<N; y++){
+
+            CellState startCell = states[0][y];
+            if( !isConnectedToEnd(startCell) ) continue;
+
+            if( boardListener != null) boardListener.onGameEnds(startCell.getMyColor());
+            break;
+        }
+
+    }
+
     private Hexagon getHexagon(int x, int y, int triangleHeight) {
         int leftPadding = (int) ( WIDTH_PAD + (y*CELL_WIDTH/2f) );
         final int left = (int)(x * CELL_WIDTH + leftPadding);
@@ -207,6 +268,7 @@ public class GameBoard extends View {
 
     public interface BoardListener{
         void onMessageToShow(String message);
+        void onGameEnds(CellState.MyColor winner);
     }
 
 }

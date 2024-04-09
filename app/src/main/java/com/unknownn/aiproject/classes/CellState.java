@@ -16,6 +16,10 @@ public class CellState {
         this.myColor = MyColor.BLANK;
     }
 
+    public void reset(){
+        this.myColor = MyColor.BLANK;
+    }
+
     public void setMyColor(MyColor color){
         this.myColor = color;
     }
@@ -30,6 +34,10 @@ public class CellState {
 
     public boolean isPointInside(float x, float y){
         return hexagon.contains(x,y);
+    }
+
+    public MyColor getMyColor() {
+        return myColor;
     }
 
     public Path getStrokePath() {
