@@ -320,12 +320,11 @@ public class GameBoard extends View {
 
         queue.add(startCell);
         final boolean[][] visited = new boolean[N][N];
+        visited[startCell.x][startCell.y] = true;
 
         while ( !queue.isEmpty() ){
             CellState curCell = queue.poll();
             if(curCell == null) continue;
-
-            visited[curCell.x][curCell.y] = true; // todo take outside
 
             final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
 
@@ -342,6 +341,7 @@ public class GameBoard extends View {
 
                     if( !horizontal && (adjCell.y == N-1) ) return false;
                     queue.add(adjCell);
+                    visited[adjCell.x][adjCell.y] = true;
                 }
             }
         }
