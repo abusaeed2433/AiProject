@@ -8,6 +8,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -18,13 +20,17 @@ import androidx.annotation.Nullable;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import kotlin.Pair;
 
 public class GameBoard extends View {
     private static final long CLICK_DURATION = 300;
     public static final float STROKE_WIDTH = 4f;
     public static final float BOUNDARY_GAP = 12f;
 
-    private static final int N = 7;
+    private static final int N = 3;
     private final CellState[][] states = new CellState[N][N];
 
     private final Paint gridBrush = new Paint();
@@ -125,6 +131,11 @@ public class GameBoard extends View {
     }
 
     private void processClick(float x, float y){
+        if( !redTurn ) {
+            if(boardListener != null) boardListener.onMessageToShow("Wait for bot move");
+            return;
+        }
+
         CellState clickedCell = null;
 
         mainLoop:
@@ -147,7 +158,7 @@ public class GameBoard extends View {
                 redTurn = !redTurn;
                 isTheFirstMove = false;
                 invalidate();
-                checkForGameOver();
+                checkForGameOver(true);
                 return;
             }
 
@@ -161,7 +172,7 @@ public class GameBoard extends View {
             isTheFirstMove = false;
         }
         invalidate();
-        checkForGameOver();
+        checkForGameOver(true);
     }
 
     private void initBrush(){
@@ -313,35 +324,34 @@ public class GameBoard extends View {
         animator.start();
     }
 
-    private boolean isNotConnectedToEnd(CellState startCell, boolean horizontal){
-        if(startCell.isBlank()) return true;
+    private boolean isNotConnectedToEnd(CellState.MyColor[][] field, int x, int y,boolean horizontal){
+        if(field[x][y] == CellState.MyColor.BLANK) return true;
 
-        final Queue<CellState> queue = new LinkedList<>();
+        final Queue<Pair<Integer,Integer>> queue = new LinkedList<>();
 
-        queue.add(startCell);
+        queue.add( new Pair<>(x,y) );
         final boolean[][] visited = new boolean[N][N];
-        visited[startCell.x][startCell.y] = true;
+        visited[x][y] = true;
 
         while ( !queue.isEmpty() ){
-            CellState curCell = queue.poll();
-            if(curCell == null) continue;
+            Pair<Integer,Integer> pair = queue.poll();
+            if(pair == null) continue;
 
             final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
 
             for(int[] offset : offsets){
-                int row = curCell.x + offset[0];
-                int col = curCell.y + offset[1];
+                int row = pair.getFirst() + offset[0];
+                int col = pair.getSecond() + offset[1];
 
                 if(row < 0 || row >= N || col < 0 || col >= N) continue;
 
-                final CellState adjCell = states[row][col];
-                if( curCell.getMyColor() == adjCell.getMyColor() && !visited[adjCell.x][adjCell.y] ){
+                if( field[pair.getFirst()][pair.getSecond()] == field[row][col] && !visited[row][col] ){
 
-                    if( horizontal && (adjCell.x == N-1) ) return false;
+                    if( horizontal && (row == N-1) ) return false;
 
-                    if( !horizontal && (adjCell.y == N-1) ) return false;
-                    queue.add(adjCell);
-                    visited[adjCell.x][adjCell.y] = true;
+                    if( !horizontal && (col == N-1) ) return false;
+                    queue.add( new Pair<>(row,col) );
+                    visited[row][col] = true;
                 }
             }
         }
@@ -359,28 +369,37 @@ public class GameBoard extends View {
         invalidate();
     }
 
-    private void checkForGameOver(){
+    private void checkForGameOver(boolean isUserMove){
+        final CellState.MyColor[][] field = getField();
+        final CellState.MyColor winner = getGameWinner(field);
 
+        if( winner == null) { // predict next move is next is bot`s turn
+            if( isUserMove ){ // true = current turn is user
+                startPredicting();
+            }
+        }
+        else { // game is finished
+            if (boardListener != null) boardListener.onGameEnds(winner);
+        }
+    }
+
+    private CellState.MyColor getGameWinner(CellState.MyColor[][] field){
         // left to right for Red
         for(int y=0; y<N; y++){
-            CellState startCell = states[0][y];
-            if( !startCell.isRed() ) continue;
+            if( field[0][y] != CellState.MyColor.RED ) continue;
 
-            if(isNotConnectedToEnd(startCell, true)) continue;
-            if( boardListener != null) boardListener.onGameEnds(startCell.getMyColor());
-            return;
+            if(isNotConnectedToEnd(field,0,y, true)) continue;
+            return CellState.MyColor.RED;
         }
 
         // top to bottom for Blue
-        for(int y=0; y<N; y++){
-            CellState startCell = states[y][0];
-            if( !startCell.isBlue() ) continue;
+        for(int x=0; x<N; x++){
+            if( field[x][0] != CellState.MyColor.BLUE ) continue;
 
-            if(isNotConnectedToEnd(startCell, false)) continue;
-            if( boardListener != null) boardListener.onGameEnds(startCell.getMyColor());
-            break;
+            if(isNotConnectedToEnd(field, x, 0, false)) continue;
+            return CellState.MyColor.BLUE;
         }
-
+        return null;
     }
 
     private Hexagon getHexagon(int x, int y, int triangleHeight) {
@@ -402,6 +421,108 @@ public class GameBoard extends View {
         Point bottomMiddle = new Point(midX, bottom+triangleHeight);
 
         return new Hexagon(leftTop, topMiddle, rightTop, rightBottom, bottomMiddle, leftBottom);
+    }
+
+    private CellState.MyColor[][] getField(){
+        final CellState.MyColor[][] field = new CellState.MyColor[N][N];
+        for(int x=0; x<N; x++){
+            for(int y=0; y<N; y++){
+                field[x][y] = states[x][y].getMyColor();
+            }
+        }
+        return field;
+    }
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private final ExecutorService service = Executors.newSingleThreadExecutor();
+    private void startPredicting(){
+        service.execute(() -> {
+            long startTime = System.currentTimeMillis();
+
+            final CellState.MyColor[][] field = getField();
+            Pair<Integer,Integer> xy = predictBotMove(field);
+
+            int x = xy.getFirst();
+            int y = xy.getSecond();
+
+            long endTime = System.currentTimeMillis();
+            long dif = (endTime - startTime);
+
+            long delay = (dif > 1000) ? 0L : 500L;
+
+            mHandler.postDelayed(() -> {
+                states[x][y].setMyColor(CellState.MyColor.BLUE);
+                redTurn = !redTurn;
+                checkForGameOver(false);
+                invalidate();
+            }, delay);
+        });
+    }
+
+    private int minimax(CellState.MyColor[][] field, int depth, final boolean isMax){
+        int score = evaluate(field);
+
+        if( score != 0 ) {
+            return score; // someone wins
+        }
+
+        int best = isMax ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+
+        for(int x=0; x<N; x++){
+            for(int y=0; y<N; y++){
+                if( field[x][y] != CellState.MyColor.BLANK ) continue;
+
+                if(isMax){ // user
+                    field[x][y] = CellState.MyColor.RED;
+                    int res = minimax(field,depth+1, false);
+                    best = Math.max(best, res);
+                }
+                else { // bot
+                    field[x][y] = CellState.MyColor.BLUE;
+                    int res = minimax(field,depth+1, true);
+                    best = Math.min(best, res);
+                }
+
+                field[x][y] = CellState.MyColor.BLANK;
+            }
+        }
+
+        return best;
+    }
+
+    private Pair<Integer,Integer> predictBotMove(CellState.MyColor[][] field){
+        int bestVal = Integer.MIN_VALUE;
+        Pair<Integer, Integer> cellToPlace = null;
+
+        for(int x=0; x<N; x++){
+            for(int y=0; y<N; y++){
+                if ( field[x][y] == CellState.MyColor.BLANK )
+                {
+                    field[x][y] =  CellState.MyColor.BLUE;
+                    int moveVal = minimax(field,0, false);
+                    field[x][y] = CellState.MyColor.BLANK;
+
+                    if (moveVal > bestVal) {
+                        cellToPlace = new Pair<>(x,y);
+                        bestVal = moveVal;
+                    }
+                }
+            }
+        }
+
+        return cellToPlace;
+    }
+
+    private int evaluate(CellState.MyColor[][] field){
+        CellState.MyColor winner = getGameWinner(field);
+        if(winner == null){ // no winner
+            return 0;
+        }
+
+        if( winner == CellState.MyColor.BLUE ){ // bot wins +10
+            return 10;
+        }
+
+        return -10; // user wins -10
     }
 
     public interface BoardListener{
