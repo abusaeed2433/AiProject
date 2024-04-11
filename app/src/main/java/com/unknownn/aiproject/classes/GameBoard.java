@@ -31,6 +31,7 @@ public class GameBoard extends View {
     public static final float BOUNDARY_GAP = 12f;
 
     private static final int N = 3;
+    private static final int N_N = N*N;
     private final CellState[][] states = new CellState[N][N];
 
     private final Paint gridBrush = new Paint();
@@ -55,6 +56,9 @@ public class GameBoard extends View {
     // for whose move
     private float circleRadius = 0f;
     private final Point circleCenter = new Point(0,0);
+    // for bot progress
+    private final Point botProgressCenter = new Point(0,0);
+
 
     public GameBoard(Context context) {
         super(context);
@@ -107,6 +111,11 @@ public class GameBoard extends View {
 
         boundaryBrush.setColor(Color.BLUE);
         canvas.drawPath(horizPath, boundaryBrush);
+
+        // bot progress
+        if( botProgressInt != N_N ) {
+            canvas.drawText(botProgressPercentStr, botProgressCenter.x, botProgressCenter.y, textBrush);
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -200,7 +209,7 @@ public class GameBoard extends View {
         textBrush.setColor(Color.BLACK);
         textBrush.setTextAlign(Paint.Align.CENTER);
         textBrush.setStyle(Paint.Style.FILL);
-        textBrush.setTextSize(20f);
+        textBrush.setTextSize(40f);
     }
 
     private void initStates(){
@@ -238,6 +247,7 @@ public class GameBoard extends View {
 
             initWhoseMovePath();
             initTwoBoundaries();
+            initBotProgressPoint();
             invalidate();
         });
     }
@@ -295,7 +305,6 @@ public class GameBoard extends View {
     }
 
     private void initWhoseMovePath(){
-
         int width = getWidth();
         int height = getHeight();
 
@@ -322,6 +331,16 @@ public class GameBoard extends View {
         animator.setRepeatCount(ValueAnimator.INFINITE);
         animator.setRepeatMode(ValueAnimator.REVERSE);
         animator.start();
+    }
+    private void initBotProgressPoint(){
+        int width = getWidth();
+        int height = getHeight();
+
+        float x = width * 0.10f;
+        float y = height * 0.90f;
+
+        botProgressCenter.x = (int)x;
+        botProgressCenter.y = (int)y;
     }
 
     private boolean isNotConnectedToEnd(CellState.MyColor[][] field, int x, int y,boolean horizontal){
@@ -489,7 +508,10 @@ public class GameBoard extends View {
         return best;
     }
 
+    private int botProgressInt = N_N;
+    private String botProgressPercentStr = "---";
     private Pair<Integer,Integer> predictBotMove(CellState.MyColor[][] field){
+        botProgressInt = 0;
         int bestVal = Integer.MIN_VALUE;
         Pair<Integer, Integer> cellToPlace = null;
 
@@ -506,6 +528,9 @@ public class GameBoard extends View {
                         bestVal = moveVal;
                     }
                 }
+                botProgressInt++;
+                botProgressPercentStr = (100 * botProgressInt) / N_N +"%";
+                mHandler.post(this::invalidate);
             }
         }
 
