@@ -18,10 +18,16 @@ import android.view.animation.LinearInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import kotlin.Pair;
 
@@ -461,8 +467,7 @@ public class GameBoard extends View {
         service.execute(() -> {
             long startTime = System.currentTimeMillis();
 
-            final CellState.MyColor[][] field = getField();
-            Pair<Integer,Integer> xy = predictBotMove(field);
+            Pair<Integer,Integer> xy = predictBotMove();
 
             int x = xy.getFirst();
             int y = xy.getSecond();
@@ -520,42 +525,84 @@ public class GameBoard extends View {
 
             }
         }
-
         return best;
     }
 
+    final AtomicInteger botProgressInt = new AtomicInteger(0);
     private String botProgressPercentStr = "---";
-    private Pair<Integer,Integer> predictBotMove(CellState.MyColor[][] field){
-        int botProgressInt = 0;
-        int bestVal = Integer.MIN_VALUE;
-        Pair<Integer, Integer> cellToPlace = null;
+    private final ExecutorService services = Executors.newFixedThreadPool(N_N);
+    private Future<?> submitToThread(
+            final CellState.MyColor[][] fieldItOnly, final int x, final int y,
+            AtomicInteger bestVal, AtomicReference<Pair<Integer,Integer>> cellToPlace){
 
-        DEPTH_LIMIT = predictDepthLimit(field);
+        return services.submit(()->{
+            System.out.println("Depth limit: "+DEPTH_LIMIT);
+
+            final CellState.MyColor[][] field = new CellState.MyColor[N][N];
+            for(int i=0; i<N; i++){
+                System.arraycopy(fieldItOnly[i], 0, field[i], 0, N);
+            }
+
+            field[x][y] = CellState.MyColor.BLUE;
+            int moveVal = minimax(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            field[x][y] = CellState.MyColor.BLANK;
+
+            System.out.println(moveVal);
+
+            if (moveVal > bestVal.get()) {
+                cellToPlace.set( new Pair<>(x,y) );
+                bestVal.set( moveVal );
+            }
+            else if( moveVal == bestVal.get() && cellToPlace.get() != null ){
+                final Pair<Integer,Integer> prev = cellToPlace.get();
+
+                int prevVal = prev.getFirst() * N + prev.getSecond();
+                int curVal = x * N + y;
+
+                if( curVal < prevVal ){ // current one is earlier, so better?
+                    cellToPlace.set( new Pair<>(x,y) );
+                }
+            }
+
+            states[x][y].score = moveVal;
+
+            botProgressInt.incrementAndGet();
+            botProgressPercentStr = (100 * botProgressInt.get()) / N_N +"%";
+            mHandler.post(this::invalidate);
+        });
+    }
+
+    private Pair<Integer,Integer> predictBotMove(){
+        botProgressInt.set(0);
+        AtomicInteger bestVal = new AtomicInteger(Integer.MIN_VALUE);
+        AtomicReference<Pair<Integer,Integer>> cellToPlace = new AtomicReference<>(null);
+
+        final CellState.MyColor[][] fieldItOnly = getField();
+        DEPTH_LIMIT = predictDepthLimit(fieldItOnly);
+
+        final List<Future<?>> futures = new ArrayList<>();
 
         for(int x = 0; x<N; x++){
             for(int y = 0; y<N; y++){
-                if ( field[x][y] == CellState.MyColor.BLANK )
-                {
-                    System.out.println("Depth limit: "+DEPTH_LIMIT);
-
-                    field[x][y] = CellState.MyColor.BLUE;
-                    int moveVal = minimax(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
-                    field[x][y] = CellState.MyColor.BLANK;
-
-                    System.out.println(moveVal);
-                    if (moveVal > bestVal) {
-                        cellToPlace = new Pair<>(x,y);
-                        bestVal = moveVal;
-                    }
-                    states[x][y].score = moveVal;
+                if ( fieldItOnly[x][y] != CellState.MyColor.BLANK ){
+                    botProgressInt.incrementAndGet();
+                    botProgressPercentStr = (100 * botProgressInt.get()) / N_N +"%";
+                    mHandler.post(this::invalidate);
+                    continue;
                 }
-                botProgressInt++;
-                botProgressPercentStr = (100 * botProgressInt) / N_N +"%";
-                mHandler.post(this::invalidate);
+
+                final Future<?> future = submitToThread(fieldItOnly, x,y, bestVal, cellToPlace);
+                futures.add(future);
             }
         }
 
-        return cellToPlace;
+        for(Future<?> future : futures) {
+            try{
+                future.get();
+            }catch (InterruptedException | ExecutionException ignored){}
+        }
+
+        return cellToPlace.get();
     }
 
     private int predictDepthLimit(CellState.MyColor[][] field){
