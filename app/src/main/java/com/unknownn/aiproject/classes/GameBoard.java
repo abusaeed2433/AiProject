@@ -471,8 +471,7 @@ public class GameBoard extends View {
             long dif = (endTime - startTime);
 
             System.out.println("Actual time taken: "+dif);
-            botProgressLong = Math.max(botProgressLong, dif);
-            botProgressPercentStr = "Max Time: "+ botProgressLong +"ms";
+            botProgressPercentStr = "Took: "+ dif +"ms";
 
             long delay = (dif > 1000) ? 0L : 500L;
 
@@ -525,7 +524,6 @@ public class GameBoard extends View {
         return best;
     }
 
-    private long botProgressLong = N_N;
     private String botProgressPercentStr = "---";
     private Pair<Integer,Integer> predictBotMove(CellState.MyColor[][] field){
         int botProgressInt = 0;
