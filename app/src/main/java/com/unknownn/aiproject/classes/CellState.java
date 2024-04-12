@@ -8,6 +8,7 @@ public class CellState {
     final int x,y;
     private MyColor myColor;
     final Hexagon hexagon;
+    public int score = 0;
 
     public CellState(int x, int y, Hexagon hexagon) {
         this.x = x;
@@ -18,6 +19,7 @@ public class CellState {
 
     public void reset(){
         this.myColor = MyColor.BLANK;
+        score = 0;
     }
 
     public void setMyColor(MyColor color){
@@ -38,9 +40,6 @@ public class CellState {
 
     public boolean isRed(){
         return myColor == MyColor.RED;
-    }
-    public boolean isBlue(){
-        return myColor == MyColor.BLUE;
     }
 
     public MyColor getMyColor() {

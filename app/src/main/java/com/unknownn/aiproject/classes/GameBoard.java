@@ -29,9 +29,11 @@ public class GameBoard extends View {
     private static final long CLICK_DURATION = 300;
     public static final float STROKE_WIDTH = 4f;
     public static final float BOUNDARY_GAP = 12f;
+    private static final int WIN = 100, LOSS = -100;
 
     private static final int N = 3;
     private static final int N_N = N*N;
+
     private final CellState[][] states = new CellState[N][N];
 
     private final Paint gridBrush = new Paint();
@@ -91,12 +93,14 @@ public class GameBoard extends View {
 
                 canvas.drawPath( cell.getStrokePath(), gridBrush );
 
-                Point pt = cell.getTextCenter();
-                canvas.drawText(i+" "+j, pt.x,pt.y,textBrush);
-
                 if(!cell.isBlank()) {
                     canvas.drawPath( cell.getFillablePath(), cell.isRed() ? redBrush : blueBrush );
                 }
+
+                Point pt = cell.getTextCenter();
+                textBrush.setColor( cell.isBlank() ? Color.BLACK : Color.WHITE );
+
+                canvas.drawText((i*N)+j+": "+cell.score, pt.x,pt.y,textBrush);
             }
         }
 
@@ -114,6 +118,8 @@ public class GameBoard extends View {
 
         // bot progress
         if( botProgressInt != N_N ) {
+            textBrush.setColor( Color.BLACK );
+            //canvas.drawText(botProgressPercentStr, botProgressCenter.x, botProgressCenter.y, textBrush);
             canvas.drawText(botProgressPercentStr, botProgressCenter.x, botProgressCenter.y, textBrush);
         }
     }
@@ -466,6 +472,9 @@ public class GameBoard extends View {
             long endTime = System.currentTimeMillis();
             long dif = (endTime - startTime);
 
+            botProgressLong = Math.max(botProgressLong, dif);
+            botProgressPercentStr = "Max Time: "+ botProgressLong +"ms";
+
             long delay = (dif > 1000) ? 0L : 500L;
 
             mHandler.postDelayed(() -> {
@@ -477,10 +486,19 @@ public class GameBoard extends View {
         });
     }
 
+    private boolean isBoardFilled(CellState.MyColor[][] field){
+        for(int x=0; x<N; x++){
+            for(int y=0; y<N; y++){
+                if(field[x][y] == CellState.MyColor.BLANK) return false;
+            }
+        }
+        return true;
+    }
+
     private int minimax(CellState.MyColor[][] field, int depth, final boolean isMax){
         int score = evaluate(field);
 
-        if( score != 0 ) {
+        if( score == WIN || score == LOSS ) {
             return score; // someone wins
         }
 
@@ -490,17 +508,15 @@ public class GameBoard extends View {
             for(int y=0; y<N; y++){
                 if( field[x][y] != CellState.MyColor.BLANK ) continue;
 
-                if(isMax){ // user
-                    field[x][y] = CellState.MyColor.RED;
-                    int res = minimax(field,depth+1, false);
+                field[x][y] = isMax ? CellState.MyColor.BLUE : CellState.MyColor.RED;
+                int res = minimax(field,depth+1, !isMax);
+
+                if(isMax){ // bot
                     best = Math.max(best, res);
                 }
-                else { // bot
-                    field[x][y] = CellState.MyColor.BLUE;
-                    int res = minimax(field,depth+1, true);
+                else { // user
                     best = Math.min(best, res);
                 }
-
                 field[x][y] = CellState.MyColor.BLANK;
             }
         }
@@ -508,7 +524,8 @@ public class GameBoard extends View {
         return best;
     }
 
-    private int botProgressInt = N_N;
+    private long botProgressLong = N_N;
+    private long botProgressInt = N_N;
     private String botProgressPercentStr = "---";
     private Pair<Integer,Integer> predictBotMove(CellState.MyColor[][] field){
         botProgressInt = 0;
@@ -519,14 +536,16 @@ public class GameBoard extends View {
             for(int y=0; y<N; y++){
                 if ( field[x][y] == CellState.MyColor.BLANK )
                 {
-                    field[x][y] =  CellState.MyColor.BLUE;
+                    field[x][y] = CellState.MyColor.BLUE;
                     int moveVal = minimax(field,0, false);
                     field[x][y] = CellState.MyColor.BLANK;
 
+                    System.out.println(moveVal);
                     if (moveVal > bestVal) {
                         cellToPlace = new Pair<>(x,y);
                         bestVal = moveVal;
                     }
+                    states[x][y].score = moveVal;
                 }
                 botProgressInt++;
                 botProgressPercentStr = (100 * botProgressInt) / N_N +"%";
@@ -538,16 +557,13 @@ public class GameBoard extends View {
     }
 
     private int evaluate(CellState.MyColor[][] field){
-        CellState.MyColor winner = getGameWinner(field);
-        if(winner == null){ // no winner
-            return 0;
-        }
+        final CellState.MyColor winner = getGameWinner(field);
 
-        if( winner == CellState.MyColor.BLUE ){ // bot wins +10
-            return 10;
-        }
+        if( winner == CellState.MyColor.BLUE ) return WIN;
 
-        return -10; // user wins -10
+        if( winner == CellState.MyColor.RED ) return LOSS;
+
+        return 0;
     }
 
     public interface BoardListener{
