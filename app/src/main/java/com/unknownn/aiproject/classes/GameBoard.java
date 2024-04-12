@@ -33,7 +33,7 @@ public class GameBoard extends View {
 
     private static final int N = 5;
     private static final int N_N = N*N;
-    private static final int DEPTH_LIMIT = N;
+    private static int DEPTH_LIMIT = N;
 
     private final CellState[][] states = new CellState[N][N];
 
@@ -470,6 +470,7 @@ public class GameBoard extends View {
             long endTime = System.currentTimeMillis();
             long dif = (endTime - startTime);
 
+            System.out.println("Actual time taken: "+dif);
             botProgressLong = Math.max(botProgressLong, dif);
             botProgressPercentStr = "Max Time: "+ botProgressLong +"ms";
 
@@ -531,10 +532,14 @@ public class GameBoard extends View {
         int bestVal = Integer.MIN_VALUE;
         Pair<Integer, Integer> cellToPlace = null;
 
-        for(int x=0; x<N; x++){
-            for(int y=0; y<N; y++){
+        DEPTH_LIMIT = predictDepthLimit(field);
+
+        for(int x = 0; x<N; x++){
+            for(int y = 0; y<N; y++){
                 if ( field[x][y] == CellState.MyColor.BLANK )
                 {
+                    System.out.println("Depth limit: "+DEPTH_LIMIT);
+
                     field[x][y] = CellState.MyColor.BLUE;
                     int moveVal = minimax(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
                     field[x][y] = CellState.MyColor.BLANK;
@@ -553,6 +558,23 @@ public class GameBoard extends View {
         }
 
         return cellToPlace;
+    }
+
+    private int predictDepthLimit(CellState.MyColor[][] field){
+        int emptyCount = 0;
+        for(CellState.MyColor[] col : field){
+            for(CellState.MyColor item : col){
+                if(item == CellState.MyColor.BLANK) emptyCount++;
+            }
+        }
+
+        int emptyPercent = (100 * emptyCount) / N_N;
+
+        if(emptyPercent > 60) return N; // early
+
+        if(emptyPercent > 40) return N+3; // medium
+
+        return N_N; // critical
     }
 
     private int evaluate(CellState.MyColor[][] field){
