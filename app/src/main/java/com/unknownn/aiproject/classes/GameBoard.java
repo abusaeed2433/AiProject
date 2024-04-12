@@ -31,8 +31,9 @@ public class GameBoard extends View {
     public static final float BOUNDARY_GAP = 12f;
     private static final int WIN = 100, LOSS = -100;
 
-    private static final int N = 3;
+    private static final int N = 5;
     private static final int N_N = N*N;
+    private static final int DEPTH_LIMIT = N;
 
     private final CellState[][] states = new CellState[N][N];
 
@@ -489,6 +490,8 @@ public class GameBoard extends View {
         if( score == WIN || score == LOSS ) {
             return score; // someone wins
         }
+
+        if( depth >= DEPTH_LIMIT ) return 0;
 
         int best = isMax ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
