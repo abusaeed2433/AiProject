@@ -117,11 +117,8 @@ public class GameBoard extends View {
         canvas.drawPath(horizPath, boundaryBrush);
 
         // bot progress
-        if( botProgressInt != N_N ) {
-            textBrush.setColor( Color.BLACK );
-            //canvas.drawText(botProgressPercentStr, botProgressCenter.x, botProgressCenter.y, textBrush);
-            canvas.drawText(botProgressPercentStr, botProgressCenter.x, botProgressCenter.y, textBrush);
-        }
+        textBrush.setColor( Color.BLACK );
+        canvas.drawText(botProgressPercentStr, botProgressCenter.x, botProgressCenter.y, textBrush);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -240,7 +237,7 @@ public class GameBoard extends View {
 
             final int triangleHeight = (int)( (CELL_HEIGHT - CELL_RECT_HEIGHT)/2f );
 
-            HEIGHT_PAD = (height - (N*CELL_RECT_HEIGHT + 2*triangleHeight)) / 2f;
+            HEIGHT_PAD = (getHeight() - (N*CELL_RECT_HEIGHT + (N-1)*triangleHeight)) / 2f;
 
             for(int x = 0; x<N; x++){
                 for(int y = 0; y<N; y++){
@@ -486,16 +483,7 @@ public class GameBoard extends View {
         });
     }
 
-    private boolean isBoardFilled(CellState.MyColor[][] field){
-        for(int x=0; x<N; x++){
-            for(int y=0; y<N; y++){
-                if(field[x][y] == CellState.MyColor.BLANK) return false;
-            }
-        }
-        return true;
-    }
-
-    private int minimax(CellState.MyColor[][] field, int depth, final boolean isMax){
+    private int minimax(CellState.MyColor[][] field, int depth, final boolean isMax, int alpha, int beta){
         int score = evaluate(field);
 
         if( score == WIN || score == LOSS ) {
@@ -504,20 +492,29 @@ public class GameBoard extends View {
 
         int best = isMax ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
+        mainLoop:
         for(int x=0; x<N; x++){
             for(int y=0; y<N; y++){
                 if( field[x][y] != CellState.MyColor.BLANK ) continue;
 
-                field[x][y] = isMax ? CellState.MyColor.BLUE : CellState.MyColor.RED;
-                int res = minimax(field,depth+1, !isMax);
-
                 if(isMax){ // bot
+                    field[x][y] = CellState.MyColor.BLUE;
+                    int res = minimax(field,depth+1, false, alpha, beta);
                     best = Math.max(best, res);
+                    alpha = Math.max( alpha, best);
+                    field[x][y] = CellState.MyColor.BLANK;
+                    if(beta <= alpha) break mainLoop;
                 }
-                else { // user
+                else{ // user
+                    field[x][y] = CellState.MyColor.RED;
+                    int res = minimax(field,depth+1, true,alpha,beta);
                     best = Math.min(best, res);
+
+                    beta = Math.min( beta, best);
+                    field[x][y] = CellState.MyColor.BLANK;
+                    if(beta <= alpha) break mainLoop;
                 }
-                field[x][y] = CellState.MyColor.BLANK;
+
             }
         }
 
@@ -525,10 +522,9 @@ public class GameBoard extends View {
     }
 
     private long botProgressLong = N_N;
-    private long botProgressInt = N_N;
     private String botProgressPercentStr = "---";
     private Pair<Integer,Integer> predictBotMove(CellState.MyColor[][] field){
-        botProgressInt = 0;
+        int botProgressInt = 0;
         int bestVal = Integer.MIN_VALUE;
         Pair<Integer, Integer> cellToPlace = null;
 
@@ -537,7 +533,7 @@ public class GameBoard extends View {
                 if ( field[x][y] == CellState.MyColor.BLANK )
                 {
                     field[x][y] = CellState.MyColor.BLUE;
-                    int moveVal = minimax(field,0, false);
+                    int moveVal = minimax(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
                     field[x][y] = CellState.MyColor.BLANK;
 
                     System.out.println(moveVal);
