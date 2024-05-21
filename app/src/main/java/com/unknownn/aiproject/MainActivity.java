@@ -39,16 +39,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setClickListener(){
-        binding.tvAlgoType.setOnClickListener( v -> {
-            if( !binding.gameBoard.swapPredictionAlgo() ) return;
-
-            if(binding.gameBoard.getPredictionAlgo() == PredictionAlgo.ALPHA_BETA_PRUNING){
-                binding.tvAlgoType.setText(getString(R.string.alpha_beta));
-            }
-            else{
-                binding.tvAlgoType.setText(getString(R.string.genetic_algo));
-            }
-        });
+        binding.tvAlgoType.setOnClickListener( v -> binding.gameBoard.swapPredictionAlgo());
     }
 
     private void setupBoard(){
@@ -56,6 +47,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onMessageToShow(String message) {
                 Helper.showSafeToast(MainActivity.this,message);
+            }
+
+            @Override
+            public void onAlgoChanged() {
+                Helper.showSafeToast(MainActivity.this,"Prediction algo is changed");
+
+                if(binding.gameBoard.getPredictionAlgo() == PredictionAlgo.ALPHA_BETA_PRUNING){
+                    binding.tvAlgoType.setText(getString(R.string.alpha_beta));
+                }
+                else{
+                    binding.tvAlgoType.setText(getString(R.string.genetic_algo));
+                }
             }
 
             @Override

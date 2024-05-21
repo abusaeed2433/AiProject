@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -400,18 +401,16 @@ public class GameBoard extends View {
         invalidate();
     }
 
-    public boolean swapPredictionAlgo(){
+    public void swapPredictionAlgo(){
         if( !redTurn ) {
             if(boardListener != null) boardListener.onMessageToShow("Be patient");
-            return false;
+            return;
         }
 
         predictionAlgo = (predictionAlgo == PredictionAlgo.ALPHA_BETA_PRUNING) ?
                 PredictionAlgo.GENETIC_ALGO : PredictionAlgo.ALPHA_BETA_PRUNING;
 
-        if(boardListener != null) boardListener.onMessageToShow("Prediction algo is changed");
-
-        return true;
+        if(boardListener != null) boardListener.onAlgoChanged();
     }
 
     public PredictionAlgo getPredictionAlgo() {
@@ -422,8 +421,8 @@ public class GameBoard extends View {
         final CellState.MyColor[][] field = getField();
         final CellState.MyColor winner = getGameWinner(field);
 
-        if( winner == null) { // predict next move is next is bot`s turn
-            if( isUserMove ){ // true = current turn is user
+        if( winner == null) { // predict next move is bot`s turn
+            if( isUserMove ){ // true = current turn was user's turn
                 startPredicting();
             }
         }
@@ -487,7 +486,8 @@ public class GameBoard extends View {
         service.execute(() -> {
             long startTime = System.currentTimeMillis();
 
-            Pair<Integer,Integer> xy = predictBotMove();
+            Pair<Integer,Integer> xy = (predictionAlgo == PredictionAlgo.ALPHA_BETA_PRUNING )
+                    ? predictByAlphaBeta() : predictByGeneticAlgo();
 
             int x = xy.getFirst();
             int y = xy.getSecond();
@@ -592,7 +592,7 @@ public class GameBoard extends View {
         });
     }
 
-    private Pair<Integer,Integer> predictBotMove(){
+    private Pair<Integer,Integer> predictByAlphaBeta(){
         botProgressInt.set(0);
         AtomicInteger bestVal = new AtomicInteger(Integer.MIN_VALUE);
         AtomicReference<Pair<Integer,Integer>> cellToPlace = new AtomicReference<>(null);
@@ -652,8 +652,49 @@ public class GameBoard extends View {
         return 0;
     }
 
+    @SuppressLint("unchecked")
+    private Pair<Integer, Integer> predictByGeneticAlgo(){
+        botProgressInt.set(0);
+
+        final CompletableFuture<Pair<Integer, Integer>> futureResult = new CompletableFuture<>();
+        Pair<Integer, Integer>[] posToPlace = new Pair[1];
+
+        final CellState.MyColor[][] currentBoard = getField();
+        GeneticApplier.getInstance()
+                .setGeneticListener(new GeneticApplier.GeneticListener() {
+                    @Override
+                    public void onProgress(int progress) {
+                        botProgressPercentStr = progress +"%";
+                        mHandler.post(() -> invalidate());
+                    }
+
+                    @Override
+                    public void onError(String message, boolean changeToAlphaBeta) {
+                        if(boardListener != null) boardListener.onMessageToShow(message);
+                        if(changeToAlphaBeta) {
+                            swapPredictionAlgo();
+                            startPredicting(); // todo test this properly
+                        }
+                    }
+
+                    @Override
+                    public void onFinished(Pair<Integer, Integer> xy) {
+                        posToPlace[0] = xy;
+                        futureResult.complete(xy);
+                    }
+                })
+                .predict(N,currentBoard);
+
+        try {
+            futureResult.get();
+        } catch (InterruptedException | ExecutionException ignored){}
+
+        return posToPlace[0];
+    }
+
     public interface BoardListener{
         void onMessageToShow(String message);
+        void onAlgoChanged();
         void onGameEnds(CellState.MyColor winner);
     }
 
