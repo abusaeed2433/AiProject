@@ -318,8 +318,8 @@ public class GameBoard extends View {
         int width = getWidth();
         int height = getHeight();
 
-        float left = width * 0.9f;
-        float right = width * 0.92f;
+        float left = width * 0.05f;//0.9f;
+        float right = width * 0.12f;//0.92f;
         float top = height * 0.1f;
         float bottom = height * 0.15f;
 
