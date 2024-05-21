@@ -12,6 +12,7 @@ import com.unknownn.aiproject.classes.CellState;
 import com.unknownn.aiproject.classes.GameBoard;
 import com.unknownn.aiproject.classes.Helper;
 import com.unknownn.aiproject.databinding.ActivityMainBinding;
+import com.unknownn.aiproject.enums.PredictionAlgo;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,7 +35,22 @@ public class MainActivity extends AppCompatActivity {
         });
 
         setupBoard();
+        setClickListener();
     }
+
+    private void setClickListener(){
+        binding.tvAlgoType.setOnClickListener( v -> {
+            if( !binding.gameBoard.swapPredictionAlgo() ) return;
+
+            if(binding.gameBoard.getPredictionAlgo() == PredictionAlgo.ALPHA_BETA_PRUNING){
+                binding.tvAlgoType.setText(getString(R.string.alpha_beta));
+            }
+            else{
+                binding.tvAlgoType.setText(getString(R.string.genetic_algo));
+            }
+        });
+    }
+
     private void setupBoard(){
         binding.gameBoard.setBoardListener(new GameBoard.BoardListener() {
             @Override

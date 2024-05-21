@@ -18,6 +18,8 @@ import android.view.animation.LinearInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.unknownn.aiproject.enums.PredictionAlgo;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,7 +69,7 @@ public class GameBoard extends View {
     private final Point circleCenter = new Point(0,0);
     // for bot progress
     private final Point botProgressCenter = new Point(0,0);
-
+    private PredictionAlgo predictionAlgo = PredictionAlgo.ALPHA_BETA_PRUNING;
 
     public GameBoard(Context context) {
         super(context);
@@ -396,6 +398,24 @@ public class GameBoard extends View {
             }
         }
         invalidate();
+    }
+
+    public boolean swapPredictionAlgo(){
+        if( !redTurn ) {
+            if(boardListener != null) boardListener.onMessageToShow("Be patient");
+            return false;
+        }
+
+        predictionAlgo = (predictionAlgo == PredictionAlgo.ALPHA_BETA_PRUNING) ?
+                PredictionAlgo.GENETIC_ALGO : PredictionAlgo.ALPHA_BETA_PRUNING;
+
+        if(boardListener != null) boardListener.onMessageToShow("Prediction algo is changed");
+
+        return true;
+    }
+
+    public PredictionAlgo getPredictionAlgo() {
+        return predictionAlgo;
     }
 
     private void checkForGameOver(boolean isUserMove){
