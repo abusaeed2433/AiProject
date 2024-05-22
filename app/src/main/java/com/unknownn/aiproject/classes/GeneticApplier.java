@@ -22,7 +22,7 @@ public class GeneticApplier {
     // Remember, the whole thing is running inside a thread
     private final Random random = new Random();
     private static final int POPULATION_SIZE = 10;
-    private static final double MUTATION_RATE = 0.10;
+    private static final int MUTATION_RATE = 5;
     private static final int NO_OF_IT = 100;
     private static final int TOURNAMENT_SIZE = 2;
     private static GeneticApplier instance = null;
@@ -45,12 +45,31 @@ public class GeneticApplier {
         return this;
     }
 
+    // Random point swapped
     private List<Cell> mutateChildren(List<Cell> chromosome){
 
+        final int rand = random.nextInt(100);
+
+        if (rand < MUTATION_RATE) {
+            final int indexOne = random.nextInt(chromosome.size());
+            int indexTwo = random.nextInt(chromosome.size());
+
+            while (indexOne == indexTwo) {
+                indexTwo = random.nextInt(chromosome.size());
+            }
+
+            final Cell temp = chromosome.get(indexOne);
+            chromosome.set(indexOne, chromosome.get(indexTwo));
+            chromosome.set(indexTwo, temp);
+
+            CellState.MyColor color = (indexOne < (chromosome.size()/2)) ? CellState.MyColor.RED : CellState.MyColor.BLUE;
+            chromosome.get(indexOne).setMyColor(color);
+
+            color = (indexTwo < (chromosome.size()/2)) ? CellState.MyColor.RED : CellState.MyColor.BLUE;
+            chromosome.get(indexTwo).setMyColor(color);
+        }
+
         return chromosome;
-//        for(int i=0; i<chromosome.size(); i++){
-//
-//        }
     }
 
     // partially mapped cross-over
@@ -70,8 +89,8 @@ public class GeneticApplier {
         final Map<Cell,Cell> mapTwo = new HashMap<>();
 
         for(int i = indexOne; i<indexTwo; i++){
-            childOne[i] = parentTwo.get(i);
-            childTwo[i] = parentOne.get(i);
+            childOne[i] = new Cell(parentTwo.get(i));
+            childTwo[i] = new Cell(parentOne.get(i));
 
             mapTwo.put(parentOne.get(i), parentTwo.get(i));
             mapOne.put(parentTwo.get(i), parentOne.get(i));
@@ -84,13 +103,13 @@ public class GeneticApplier {
                     cellOne = mapOne.get(cellOne);
                     System.out.println(cellOne);
                 }
-                childOne[i] = cellOne;
+                childOne[i] = new Cell(cellOne);
 
                 Cell cellTwo = parentTwo.get(i);
                 while (mapTwo.containsKey(cellTwo)) {
                     cellTwo = mapTwo.get(cellTwo);
                 }
-                childTwo[i] = cellTwo;
+                childTwo[i] = new Cell(cellTwo);
             }
 
             // making the first half of same color

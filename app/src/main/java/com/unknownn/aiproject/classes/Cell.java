@@ -13,6 +13,13 @@ public class Cell {
         this.y = y;
         this.myColor = myColor;
     }
+
+    public Cell(Cell cell){
+        this.x = cell.x;
+        this.y = cell.y;
+        this.myColor = cell.myColor;
+    }
+
     public void setMyColor(CellState.MyColor color){
         this.myColor = color;
     }
@@ -39,7 +46,8 @@ public class Cell {
     @NonNull
     @Override
     public String toString() {
-        return "("+ x +","+ y + ")";
+//        return "("+ x +","+ y + ")";
+        return myColor.name();
     }
 
 }
