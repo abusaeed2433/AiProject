@@ -27,7 +27,6 @@ public class GeneticApplier {
     private static final int TOURNAMENT_SIZE = 2;
     private static GeneticApplier instance = null;
 
-
     private int N;
     private CellState.MyColor[][] board;
 
@@ -103,21 +102,23 @@ public class GeneticApplier {
                     cellOne = mapOne.get(cellOne);
                     System.out.println(cellOne);
                 }
+
+                assert cellOne != null;
                 childOne[i] = new Cell(cellOne);
 
                 Cell cellTwo = parentTwo.get(i);
                 while (mapTwo.containsKey(cellTwo)) {
                     cellTwo = mapTwo.get(cellTwo);
                 }
+
+                assert cellTwo != null;
                 childTwo[i] = new Cell(cellTwo);
             }
 
             // making the first half of same color
             CellState.MyColor color = (i < half) ? CellState.MyColor.RED : CellState.MyColor.BLUE;
-            assert childOne[i] != null;
-            childOne[i].setMyColor(color);
 
-            assert childTwo[i] != null;
+            childOne[i].setMyColor(color);
             childTwo[i].setMyColor(color);
         }
 
