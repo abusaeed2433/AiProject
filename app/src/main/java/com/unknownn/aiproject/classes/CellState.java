@@ -4,15 +4,12 @@ import android.graphics.Color;
 import android.graphics.Path;
 import android.graphics.Point;
 
-public class CellState {
-    final int x,y;
-    private MyColor myColor;
+public class CellState extends Cell{
     final Hexagon hexagon;
     public int score = 0;
 
     public CellState(int x, int y, Hexagon hexagon) {
-        this.x = x;
-        this.y = y;
+        super(x,y);
         this.hexagon = hexagon;
         this.myColor = MyColor.BLANK;
     }
