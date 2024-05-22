@@ -21,7 +21,7 @@ public class GeneticApplier {
 
     // Remember, the whole thing is running inside a thread
     private final Random random = new Random();
-    private static final int POPULATION_SIZE = 5;
+    private static final int POPULATION_SIZE = 10;
     private static final double MUTATION_RATE = 0.10;
     private static final int NO_OF_IT = 10;
     private static final int TOURNAMENT_SIZE = 2;
@@ -165,7 +165,7 @@ public class GeneticApplier {
             }
         }
 
-        if(emptyList.size() < 5) {
+        if(emptyList.size() < POPULATION_SIZE) {
             geneticListener.onError("Can't apply. Too few cells are left", true);
             return null;
         }
@@ -239,6 +239,9 @@ public class GeneticApplier {
                 globalBestVal = localBestVal;
                 globalBest = localBest;
             }
+
+            int progress = (100*it) / NO_OF_IT;
+            geneticListener.onProgress(progress);
         }
 
         for(Cell cell : globalBest){
