@@ -9,9 +9,8 @@ public class CellState extends Cell{
     public int score = 0;
 
     public CellState(int x, int y, Hexagon hexagon) {
-        super(x,y);
+        super(x,y, MyColor.BLANK);
         this.hexagon = hexagon;
-        this.myColor = MyColor.BLANK;
     }
 
     public void reset(){

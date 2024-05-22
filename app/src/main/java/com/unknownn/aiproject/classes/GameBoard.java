@@ -1,5 +1,8 @@
 package com.unknownn.aiproject.classes;
 
+import static com.unknownn.aiproject.classes.Calculator.LOSS;
+import static com.unknownn.aiproject.classes.Calculator.WIN;
+
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -38,7 +41,6 @@ public class GameBoard extends View {
     private static final long CLICK_DURATION = 300;
     public static final float STROKE_WIDTH = 4f;
     public static final float BOUNDARY_GAP = 12f;
-    private static final int WIN = 100, LOSS = -100;
 
     private static final int N = 5;
     private static final int N_N = N*N;
@@ -356,39 +358,7 @@ public class GameBoard extends View {
         botProgressCenter.y = (int)y;
     }
 
-    private boolean isNotConnectedToEnd(CellState.MyColor[][] field, int x, int y,boolean horizontal){
-        if(field[x][y] == CellState.MyColor.BLANK) return true;
 
-        final Queue<Pair<Integer,Integer>> queue = new LinkedList<>();
-
-        queue.add( new Pair<>(x,y) );
-        final boolean[][] visited = new boolean[N][N];
-        visited[x][y] = true;
-
-        while ( !queue.isEmpty() ){
-            Pair<Integer,Integer> pair = queue.poll();
-            if(pair == null) continue;
-
-            final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
-
-            for(int[] offset : offsets){
-                int row = pair.getFirst() + offset[0];
-                int col = pair.getSecond() + offset[1];
-
-                if(row < 0 || row >= N || col < 0 || col >= N) continue;
-
-                if( field[pair.getFirst()][pair.getSecond()] == field[row][col] && !visited[row][col] ){
-
-                    if( horizontal && (row == N-1) ) return false;
-
-                    if( !horizontal && (col == N-1) ) return false;
-                    queue.add( new Pair<>(row,col) );
-                    visited[row][col] = true;
-                }
-            }
-        }
-        return true;
-    }
 
     public void restart(){
         redTurn = true;
@@ -419,7 +389,7 @@ public class GameBoard extends View {
 
     private void checkForGameOver(boolean isUserMove){
         final CellState.MyColor[][] field = getField();
-        final CellState.MyColor winner = getGameWinner(field);
+        final CellState.MyColor winner = Calculator.getGameWinner(field,N);
 
         if( winner == null) { // predict next move is bot`s turn
             if( isUserMove ){ // true = current turn was user's turn
@@ -431,24 +401,6 @@ public class GameBoard extends View {
         }
     }
 
-    private CellState.MyColor getGameWinner(CellState.MyColor[][] field){
-        // left to right for Red
-        for(int y=0; y<N; y++){
-            if( field[0][y] != CellState.MyColor.RED ) continue;
-
-            if(isNotConnectedToEnd(field,0,y, true)) continue;
-            return CellState.MyColor.RED;
-        }
-
-        // top to bottom for Blue
-        for(int x=0; x<N; x++){
-            if( field[x][0] != CellState.MyColor.BLUE ) continue;
-
-            if(isNotConnectedToEnd(field, x, 0, false)) continue;
-            return CellState.MyColor.BLUE;
-        }
-        return null;
-    }
 
     private Hexagon getHexagon(int x, int y, int triangleHeight) {
         int leftPadding = (int) ( WIDTH_PAD + (y*CELL_WIDTH/2f) );
@@ -643,7 +595,7 @@ public class GameBoard extends View {
     }
 
     private int evaluate(CellState.MyColor[][] field){
-        final CellState.MyColor winner = getGameWinner(field);
+        final CellState.MyColor winner = Calculator.getGameWinner(field,N);
 
         if( winner == CellState.MyColor.BLUE ) return WIN;
 
