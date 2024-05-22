@@ -23,7 +23,7 @@ public class GeneticApplier {
     private final Random random = new Random();
     private static final int POPULATION_SIZE = 10;
     private static final double MUTATION_RATE = 0.10;
-    private static final int NO_OF_IT = 10;
+    private static final int NO_OF_IT = 100;
     private static final int TOURNAMENT_SIZE = 2;
     private static GeneticApplier instance = null;
 

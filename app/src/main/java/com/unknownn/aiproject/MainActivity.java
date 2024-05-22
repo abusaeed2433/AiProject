@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setClickListener(){
-        binding.tvAlgoType.setOnClickListener( v -> binding.gameBoard.swapPredictionAlgo());
+        binding.tvAlgoType.setOnClickListener( v -> binding.gameBoard.swapPredictionAlgo(false));
     }
 
     private void setupBoard(){
@@ -52,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAlgoChanged() {
                 Helper.showSafeToast(MainActivity.this,"Prediction algo is changed");
+
 
                 if(binding.gameBoard.getPredictionAlgo() == PredictionAlgo.ALPHA_BETA_PRUNING){
                     binding.tvAlgoType.setText(getString(R.string.alpha_beta));
@@ -70,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
                         .setMessage(strWinner+" won.")
                         .setPositiveButton("Restart", (dialogInterface, i) -> binding.gameBoard.restart())
                         .setNegativeButton("Exit", (dialogInterface, i) -> MainActivity.this.finishAffinity())
+                        .setCancelable(false)
                         .show();
             }
         });

@@ -371,8 +371,8 @@ public class GameBoard extends View {
         invalidate();
     }
 
-    public void swapPredictionAlgo(){
-        if( !redTurn ) {
+    public void swapPredictionAlgo(boolean requestedByBot){
+        if( !redTurn && !requestedByBot) {
             if(boardListener != null) boardListener.onMessageToShow("Be patient");
             return;
         }
@@ -440,6 +440,8 @@ public class GameBoard extends View {
 
             Pair<Integer,Integer> xy = (predictionAlgo == PredictionAlgo.ALPHA_BETA_PRUNING )
                     ? predictByAlphaBeta() : predictByGeneticAlgo();
+
+            if(xy == null) return;
 
             int x = xy.getFirst();
             int y = xy.getSecond();
@@ -610,6 +612,7 @@ public class GameBoard extends View {
 
         final CompletableFuture<Pair<Integer, Integer>> futureResult = new CompletableFuture<>();
         Pair<Integer, Integer>[] posToPlace = new Pair[1];
+        posToPlace[0] = null;
 
         final CellState.MyColor[][] currentBoard = getField();
         GeneticApplier.getInstance()
@@ -622,11 +625,14 @@ public class GameBoard extends View {
 
                     @Override
                     public void onError(String message, boolean changeToAlphaBeta) {
-                        if(boardListener != null) boardListener.onMessageToShow(message);
-                        if(changeToAlphaBeta) {
-                            swapPredictionAlgo();
-                            startPredicting(); // todo test this properly
-                        }
+                        mHandler.post(() -> {
+                            if(boardListener != null) boardListener.onMessageToShow(message);
+                            if(changeToAlphaBeta) {
+                                futureResult.complete(null);
+                                swapPredictionAlgo(true);
+                                startPredicting(); // todo test this properly
+                            }
+                        });
                     }
 
                     @Override
