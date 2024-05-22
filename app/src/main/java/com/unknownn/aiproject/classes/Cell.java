@@ -1,5 +1,9 @@
 package com.unknownn.aiproject.classes;
 
+import androidx.annotation.NonNull;
+
+import java.util.Objects;
+
 public class Cell {
     final int x,y;
     protected CellState.MyColor myColor;
@@ -8,6 +12,34 @@ public class Cell {
         this.x = x;
         this.y = y;
         this.myColor = myColor;
+    }
+    public void setMyColor(CellState.MyColor color){
+        this.myColor = color;
+    }
+
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x,y);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(this == obj) return true;
+
+        if(obj == null) return false;
+
+        if( !(obj instanceof Cell) ) return false;
+
+        Cell cell = (Cell)obj;
+
+        return x == cell.x && y == cell.y;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "("+ x +","+ y + ")";
     }
 
 }

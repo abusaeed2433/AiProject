@@ -18,9 +18,6 @@ public class CellState extends Cell{
         score = 0;
     }
 
-    public void setMyColor(MyColor color){
-        this.myColor = color;
-    }
 
     public boolean isBlank(){
         return myColor == MyColor.BLANK;
@@ -53,5 +50,13 @@ public class CellState extends Cell{
         return hexagon.getFillablePath();
     }
 
-    public enum MyColor { RED, BLUE, BLANK }
+    public enum MyColor {
+        RED(1), BLUE(2), BLANK(0);
+
+        final int id;
+        MyColor(int id) {
+            this.id = id;
+        }
+
+    }
 }

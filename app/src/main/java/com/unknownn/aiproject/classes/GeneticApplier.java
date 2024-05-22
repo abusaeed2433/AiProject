@@ -3,14 +3,16 @@ package com.unknownn.aiproject.classes;
 import static com.unknownn.aiproject.classes.Calculator.LOSS;
 import static com.unknownn.aiproject.classes.Calculator.WIN;
 
-import android.hardware.lights.LightsManager;
-
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import kotlin.Pair;
@@ -20,6 +22,7 @@ public class GeneticApplier {
     // Remember, the whole thing is running inside a thread
     private final Random random = new Random();
     private static final int POPULATION_SIZE = 5;
+    private static final double MUTATION_RATE = 0.10;
     private static final int NO_OF_IT = 10;
     private static final int TOURNAMENT_SIZE = 2;
     private static GeneticApplier instance = null;
@@ -42,12 +45,76 @@ public class GeneticApplier {
         return this;
     }
 
-    private List<Cell> applyCrossover(List<Cell> parentOne, List<Cell> parentTwo){
+    private List<Cell> mutateChildren(List<Cell> chromosome){
+
+        return chromosome;
+//        for(int i=0; i<chromosome.size(); i++){
+//
+//        }
+    }
+
+    // partially mapped cross-over
+    @NonNull
+    private static List<List<Cell>> applyCrossover(@NonNull List<Cell> parentOne, List<Cell> parentTwo){
         final int half = parentOne.size() / 2;
 
-        final int quarter = half / 2;
+        final Cell[] childOne = new Cell[parentOne.size()];
+        final Cell[] childTwo = new Cell[parentOne.size()];
 
-        List<Cell>
+        final Random random = new Random();
+
+        int indexOne = random.nextInt(half);
+        int indexTwo = half + random.nextInt(half);
+
+        final Map<Cell,Cell> mapOne = new HashMap<>();
+        final Map<Cell,Cell> mapTwo = new HashMap<>();
+
+        for(int i = indexOne; i<indexTwo; i++){
+            childOne[i] = parentTwo.get(i);
+            childTwo[i] = parentOne.get(i);
+
+            mapTwo.put(parentOne.get(i), parentTwo.get(i));
+            mapOne.put(parentTwo.get(i), parentOne.get(i));
+        }
+
+        for(int i=0; i<childOne.length; i++){
+            if(i < indexOne || i >= indexTwo) {
+                Cell cellOne = parentOne.get(i);
+                while (mapOne.containsKey(cellOne)) {
+                    cellOne = mapOne.get(cellOne);
+                    System.out.println(cellOne);
+                }
+                childOne[i] = cellOne;
+
+                Cell cellTwo = parentTwo.get(i);
+                while (mapTwo.containsKey(cellTwo)) {
+                    cellTwo = mapTwo.get(cellTwo);
+                }
+                childTwo[i] = cellTwo;
+            }
+
+            // making the first half of same color
+            CellState.MyColor color = (i < half) ? CellState.MyColor.RED : CellState.MyColor.BLUE;
+            assert childOne[i] != null;
+            childOne[i].setMyColor(color);
+
+            assert childTwo[i] != null;
+            childTwo[i].setMyColor(color);
+        }
+
+        final List<List<Cell>> offspring = new ArrayList<>();
+        final List<Cell> child1 = new ArrayList<>();
+        final List<Cell> child2 = new ArrayList<>();
+
+        for(int i=0; i<childOne.length; i++){
+            child1.add(childOne[i]);
+            child2.add(childTwo[i]);
+        }
+
+        offspring.add(child1);
+        offspring.add(child2);
+
+        return offspring;
     }
 
     private List<Cell> getParentFromTournament(List<List<Cell>> population){
@@ -128,6 +195,7 @@ public class GeneticApplier {
                 copiedEmptyList.remove(index);
             }
 
+//            chromosome.sort(Comparator.comparingInt(t -> t.myColor.id));
             populations.add(chromosome);
         }
 
@@ -155,10 +223,12 @@ public class GeneticApplier {
                 final List<Cell> parentOne = getParentFromTournament(populations);
                 final List<Cell> parentTwo = getParentFromTournament(populations);
 
-                final List<Cell> child = applyCrossover(parentOne, parentTwo);
-                final List<Cell> mutatedChild = mutateChild(child);
+                final List<List<Cell>> childAfterCross = applyCrossover(parentOne, parentTwo);
 
-                offspring.add(mutatedChild);
+                for(List<Cell> child : childAfterCross) {
+                    final List<Cell> mutatedChild = mutateChildren(child);
+                    offspring.add(mutatedChild);
+                }
             }
 
             final List<Cell> localBest = getTheBest(offspring);
