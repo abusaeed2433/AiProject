@@ -6,10 +6,10 @@ import static com.unknownn.aiproject.classes.Calculator.WIN;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.unknownn.aiproject.listener.GeneticListener;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -253,9 +253,4 @@ public class GeneticApplier {
 
     }
 
-    public interface GeneticListener {
-        void onProgress(int progress);
-        void onFinished(Pair<Integer,Integer> xy);
-        void onError(String message, boolean changeToAlphaBeta);
-    }
 }

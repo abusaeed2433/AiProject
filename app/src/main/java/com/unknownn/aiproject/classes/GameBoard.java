@@ -1,8 +1,5 @@
 package com.unknownn.aiproject.classes;
 
-import static com.unknownn.aiproject.classes.Calculator.LOSS;
-import static com.unknownn.aiproject.classes.Calculator.WIN;
-
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -22,18 +19,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.unknownn.aiproject.enums.PredictionAlgo;
+import com.unknownn.aiproject.listener.AlphaBetaListener;
+import com.unknownn.aiproject.listener.GeneticListener;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import kotlin.Pair;
 
@@ -41,10 +33,7 @@ public class GameBoard extends View {
     private static final long CLICK_DURATION = 300;
     public static final float STROKE_WIDTH = 4f;
     public static final float BOUNDARY_GAP = 12f;
-
     private static final int N = 5;
-    private static final int N_N = N*N;
-    private static int DEPTH_LIMIT = N;
 
     private final CellState[][] states = new CellState[N][N];
 
@@ -432,7 +421,9 @@ public class GameBoard extends View {
         }
         return field;
     }
+
     private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private String botProgressPercentStr = "---";
     private final ExecutorService service = Executors.newSingleThreadExecutor();
     private void startPredicting(){
         service.execute(() -> {
@@ -463,160 +454,59 @@ public class GameBoard extends View {
         });
     }
 
-    private int minimax(CellState.MyColor[][] field, int depth, final boolean isMax, int alpha, int beta){
-        int score = evaluate(field);
-
-        if( score == WIN || score == LOSS ) {
-            return score; // someone wins
-        }
-
-        if( depth >= DEPTH_LIMIT ) return 0;
-
-        int best = isMax ? Integer.MIN_VALUE : Integer.MAX_VALUE;
-
-        mainLoop:
-        for(int x=0; x<N; x++){
-            for(int y=0; y<N; y++){
-                if( field[x][y] != CellState.MyColor.BLANK ) continue;
-
-                if(isMax){ // bot
-                    field[x][y] = CellState.MyColor.BLUE;
-                    int res = minimax(field,depth+1, false, alpha, beta);
-                    best = Math.max(best, res);
-                    alpha = Math.max( alpha, best);
-                    field[x][y] = CellState.MyColor.BLANK;
-                    if(beta <= alpha) break mainLoop;
-                }
-                else{ // user
-                    field[x][y] = CellState.MyColor.RED;
-                    int res = minimax(field,depth+1, true,alpha,beta);
-                    best = Math.min(best, res);
-
-                    beta = Math.min( beta, best);
-                    field[x][y] = CellState.MyColor.BLANK;
-                    if(beta <= alpha) break mainLoop;
-                }
-
-            }
-        }
-        return best;
-    }
-
-    final AtomicInteger botProgressInt = new AtomicInteger(0);
-    private String botProgressPercentStr = "---";
-    private final ExecutorService services = Executors.newFixedThreadPool(N_N);
-    private Future<?> submitToThread(
-            final CellState.MyColor[][] fieldItOnly, final int x, final int y,
-            AtomicInteger bestVal, AtomicReference<Pair<Integer,Integer>> cellToPlace){
-
-        return services.submit(()->{
-            System.out.println("Depth limit: "+DEPTH_LIMIT);
-
-            final CellState.MyColor[][] field = new CellState.MyColor[N][N];
-            for(int i=0; i<N; i++){
-                System.arraycopy(fieldItOnly[i], 0, field[i], 0, N);
-            }
-
-            field[x][y] = CellState.MyColor.BLUE;
-            int moveVal = minimax(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
-            field[x][y] = CellState.MyColor.BLANK;
-
-            System.out.println(moveVal);
-
-            if (moveVal > bestVal.get()) {
-                cellToPlace.set( new Pair<>(x,y) );
-                bestVal.set( moveVal );
-            }
-            else if( moveVal == bestVal.get() && cellToPlace.get() != null ){
-                final Pair<Integer,Integer> prev = cellToPlace.get();
-
-                int prevVal = prev.getFirst() * N + prev.getSecond();
-                int curVal = x * N + y;
-
-                if( curVal < prevVal ){ // current one is earlier, so better?
-                    cellToPlace.set( new Pair<>(x,y) );
-                }
-            }
-
-            states[x][y].score = moveVal;
-
-            botProgressInt.incrementAndGet();
-            botProgressPercentStr = (100 * botProgressInt.get()) / N_N +"%";
-            mHandler.post(this::invalidate);
-        });
-    }
-
+    @SuppressWarnings("unchecked")
     private Pair<Integer,Integer> predictByAlphaBeta(){
-        botProgressInt.set(0);
-        AtomicInteger bestVal = new AtomicInteger(Integer.MIN_VALUE);
-        AtomicReference<Pair<Integer,Integer>> cellToPlace = new AtomicReference<>(null);
-
-        final CellState.MyColor[][] fieldItOnly = getField();
-        DEPTH_LIMIT = predictDepthLimit(fieldItOnly);
-
-        final List<Future<?>> futures = new ArrayList<>();
-
-        for(int x = 0; x<N; x++){
-            for(int y = 0; y<N; y++){
-                if ( fieldItOnly[x][y] != CellState.MyColor.BLANK ){
-                    botProgressInt.incrementAndGet();
-                    botProgressPercentStr = (100 * botProgressInt.get()) / N_N +"%";
-                    mHandler.post(this::invalidate);
-                    continue;
-                }
-
-                final Future<?> future = submitToThread(fieldItOnly, x,y, bestVal, cellToPlace);
-                futures.add(future);
-            }
-        }
-
-        for(Future<?> future : futures) {
-            try{
-                future.get();
-            }catch (InterruptedException | ExecutionException ignored){}
-        }
-
-        return cellToPlace.get();
-    }
-
-    private int predictDepthLimit(CellState.MyColor[][] field){
-        int emptyCount = 0;
-        for(CellState.MyColor[] col : field){
-            for(CellState.MyColor item : col){
-                if(item == CellState.MyColor.BLANK) emptyCount++;
-            }
-        }
-
-        int emptyPercent = (100 * emptyCount) / N_N;
-
-        if(emptyPercent > 60) return N; // early
-
-        if(emptyPercent > 40) return N+3; // medium
-
-        return N_N; // critical
-    }
-
-    private int evaluate(CellState.MyColor[][] field){
-        final CellState.MyColor winner = Calculator.getGameWinner(field,N);
-
-        if( winner == CellState.MyColor.BLUE ) return WIN;
-
-        if( winner == CellState.MyColor.RED ) return LOSS;
-
-        return 0;
-    }
-
-    @SuppressLint("unchecked")
-    private Pair<Integer, Integer> predictByGeneticAlgo(){
-        botProgressInt.set(0);
 
         final CompletableFuture<Pair<Integer, Integer>> futureResult = new CompletableFuture<>();
         Pair<Integer, Integer>[] posToPlace = new Pair[1];
         posToPlace[0] = null;
 
         final CellState.MyColor[][] currentBoard = getField();
+        AlphaBetaApplier.getInstance()
+                .setAlphaBetaListener(new AlphaBetaListener() {
+                    @Override
+                    public void onProgress(int progress) {
+                        botProgressPercentStr = progress +"%";
+                        mHandler.post(() -> invalidate());
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        mHandler.post(() -> {
+                            if(boardListener != null) boardListener.onMessageToShow(message);
+                        });
+                    }
+
+                    @Override
+                    public void onCellValueUpdated(int x, int y, int moveVal) {
+                        states[x][y].score = moveVal;
+                        mHandler.post(() -> invalidate());
+                    }
+
+                    @Override
+                    public void onFinished(Pair<Integer, Integer> xy) {
+                        posToPlace[0] = xy;
+                        futureResult.complete(xy);
+                    }
+                })
+                .predict(currentBoard,N);
+
+        try {
+            futureResult.get();
+        } catch (InterruptedException | ExecutionException ignored){}
+
+        return posToPlace[0];
+    }
+
+    @SuppressWarnings("unchecked")
+    private Pair<Integer, Integer> predictByGeneticAlgo(){
+        final CompletableFuture<Pair<Integer, Integer>> futureResult = new CompletableFuture<>();
+        Pair<Integer, Integer>[] posToPlace = new Pair[1];
+        posToPlace[0] = null;
+
+        final CellState.MyColor[][] currentBoard = getField();
         GeneticApplier.getInstance()
-                .setGeneticListener(new GeneticApplier.GeneticListener() {
+                .setGeneticListener(new GeneticListener() {
                     @Override
                     public void onProgress(int progress) {
                         botProgressPercentStr = progress +"%";
@@ -630,7 +520,7 @@ public class GameBoard extends View {
                             if(changeToAlphaBeta) {
                                 futureResult.complete(null);
                                 swapPredictionAlgo(true);
-                                startPredicting(); // todo test this properly
+                                startPredicting();
                             }
                         });
                     }
