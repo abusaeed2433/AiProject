@@ -22,6 +22,7 @@ import com.unknownn.aiproject.enums.PredictionAlgo;
 import com.unknownn.aiproject.listener.AlphaBetaListener;
 import com.unknownn.aiproject.listener.GeneticListener;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -40,6 +41,8 @@ public class GameBoard extends View {
     private final Paint gridBrush = new Paint();
     private final Paint blueBrush = new Paint();
     private final Paint redBrush = new Paint();
+    private final Paint lightRedBrush = new Paint();
+    private final Paint lightBlueBrush = new Paint();
     private final Paint textBrush = new Paint();
 
     private final Paint boundaryBrush = new Paint();
@@ -62,6 +65,8 @@ public class GameBoard extends View {
     // for bot progress
     private final Point botProgressCenter = new Point(0,0);
     private PredictionAlgo predictionAlgo = PredictionAlgo.ALPHA_BETA_PRUNING;
+
+    private final Cell[][] selectedBoardFromGenetic = new Cell[N][N];
 
     public GameBoard(Context context) {
         super(context);
@@ -93,6 +98,10 @@ public class GameBoard extends View {
                 if(cell == null) continue;
 
                 canvas.drawPath( cell.getStrokePath(), gridBrush );
+
+                if(selectedBoardFromGenetic[i][j] != null && selectedBoardFromGenetic[i][j].x == -1){
+                    canvas.drawPath( cell.getFillablePath(), selectedBoardFromGenetic[i][j].isRed() ? lightRedBrush : lightBlueBrush );
+                }
 
                 if(!cell.isBlank()) {
                     canvas.drawPath( cell.getFillablePath(), cell.isRed() ? redBrush : blueBrush );
@@ -189,7 +198,7 @@ public class GameBoard extends View {
     }
 
     private void initBrush(){
-        final Paint[] brushes = new Paint[]{ gridBrush, redBrush, blueBrush, boundaryBrush };
+        final Paint[] brushes = new Paint[]{ gridBrush, redBrush, lightRedBrush, blueBrush, lightBlueBrush, boundaryBrush };
 
         for(Paint brush : brushes) {
             brush.setAntiAlias(true);
@@ -201,7 +210,10 @@ public class GameBoard extends View {
         }
 
         redBrush.setColor(Color.RED);
+        lightRedBrush.setColor(Color.argb(120,120,20,20));
+
         blueBrush.setColor(Color.BLUE);
+        lightBlueBrush.setColor(Color.argb(120,20,20,150));
 
         gridBrush.setStyle(Paint.Style.STROKE);
 
@@ -523,6 +535,16 @@ public class GameBoard extends View {
                                 startPredicting();
                             }
                         });
+                    }
+
+                    @Override
+                    public void onDrawRequest(List<Cell> selectedBoard) {
+                        for(Cell cell : selectedBoard){
+                            selectedBoardFromGenetic[cell.x][cell.y] = new Cell(-1,-1,cell.myColor);
+                        }
+                        mHandler.post(() ->
+                                invalidate()
+                        );
                     }
 
                     @Override

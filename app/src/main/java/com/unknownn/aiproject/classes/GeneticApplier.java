@@ -23,7 +23,7 @@ public class GeneticApplier {
     private final Random random = new Random();
     private static final int POPULATION_SIZE = 10;
     private static final int MUTATION_RATE = 5;
-    private static final int NO_OF_IT = 100;
+    private static final int NO_OF_IT = 200;
     private static final int TOURNAMENT_SIZE = 2;
     private static GeneticApplier instance = null;
 
@@ -163,11 +163,12 @@ public class GeneticApplier {
             copiedBoard[cell.x][cell.y] = cell.myColor;
         }
 
+        // todo change as much as possible the predict the best value
         final CellState.MyColor winner = Calculator.getGameWinner(copiedBoard, N);
 
-        if( winner == CellState.MyColor.BLUE ) return WIN; // 100
+        if( winner == CellState.MyColor.BLUE ) return LOSS; // -100
 
-        if( winner == CellState.MyColor.RED ) return LOSS; // -100
+        if( winner == CellState.MyColor.RED ) return WIN; // 100
 
         return 0;
     }
@@ -264,8 +265,10 @@ public class GeneticApplier {
             geneticListener.onProgress(progress);
         }
 
+        // todo use previous if can be used
         for(Cell cell : globalBest){
             if(cell.myColor == CellState.MyColor.RED){
+                geneticListener.onDrawRequest(globalBest);
                 geneticListener.onFinished(new Pair<>(cell.x, cell.y));
                 return;
             }

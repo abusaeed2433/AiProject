@@ -20,6 +20,9 @@ public class Cell {
         this.myColor = cell.myColor;
     }
 
+    public boolean isRed(){
+        return myColor == CellState.MyColor.RED;
+    }
     public void setMyColor(CellState.MyColor color){
         this.myColor = color;
     }
