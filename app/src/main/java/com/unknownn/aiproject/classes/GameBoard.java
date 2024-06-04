@@ -283,12 +283,19 @@ public class GameBoard extends View {
         });
     }
 
+    private void stopAnimatorNow(){
+        animateIndex = NO_OF_INTERMEDIATE_PATHS - 1;
+        animator.cancel();
+        // stop immediately
+    }
+
+    final ValueAnimator animator = ValueAnimator.ofInt(0,NO_OF_INTERMEDIATE_PATHS-1);
     private void processForAnimation(final CellState cell){
         this.cellToAnimate = cell;
         animateIndex = 0;
-        createIntermediatePaths(cell.getFillablePath());
+        createIntermediatePaths(cell);
 
-        final ValueAnimator animator = ValueAnimator.ofInt(0,NO_OF_INTERMEDIATE_PATHS-1);
+
         animator.setDuration(500);
         animator.addUpdateListener(valueAnimator -> {
             animateIndex = (int) valueAnimator.getAnimatedValue();
@@ -297,17 +304,43 @@ public class GameBoard extends View {
         animator.start();
     }
 
-    private void createIntermediatePaths(final Path mainPath){
-        final Path path = new Path(mainPath);
+    private void createIntermediatePaths(final CellState cell){
+        final Path path = new Path(cell.getFillablePath());
 
         final PathMeasure pm = new PathMeasure(path,true);
-        final float length = pm.getLength();
-        final float divLength = (length / NO_OF_INTERMEDIATE_PATHS);
+
+        final float leftVertLength = cell.getLeftVertLength();
+
+        final Point leftTop = cell.getLeftTopPoint();
+        final Point leftBottom = cell.getLeftBottomPoint();
+        final Point topMiddle = cell.getTopMiddlePoint();
+        final Point bottomMiddle = cell.getBottomMiddlePoint();
+
+        final float topHorizLength = ( pm.getLength() - 2*leftVertLength ) / 2f;
+        final float divLength = (topHorizLength / NO_OF_INTERMEDIATE_PATHS);
+
+        final float[] point = new float[2];
 
         for(int i=1; i<=NO_OF_INTERMEDIATE_PATHS; i++){
             final Path subPath = new Path();
+            subPath.moveTo(leftBottom.x, leftBottom.y);
+            subPath.lineTo(leftTop.x, leftTop.y);
 
-            pm.getSegment(0, divLength * i, subPath, true);
+            float dist = divLength * i;
+            pm.getPosTan(dist, point, null);
+
+            if(point[0] > topMiddle.x) { subPath.lineTo(topMiddle.x, topMiddle.y); }
+
+            subPath.lineTo(point[0], point[1]);
+
+            dist = pm.getLength() - leftVertLength - dist;
+            pm.getPosTan(dist, point, null);
+            subPath.lineTo(point[0], point[1]);
+
+            if(point[0] > bottomMiddle.x) { subPath.lineTo(bottomMiddle.x, bottomMiddle.y); }
+
+            subPath.lineTo(leftBottom.x, leftBottom.y);
+
             intermediatePaths[i-1] = subPath;
         }
     }
@@ -450,6 +483,7 @@ public class GameBoard extends View {
         }
         else { // game is finished
             if (boardListener != null) {
+                stopAnimatorNow();
                 boardListener.onGameEnds(winner);
                 boardListener.onSoundPlayRequest(SoundController.SoundType.GAME_OVER);
             }

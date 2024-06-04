@@ -52,6 +52,17 @@ public class Hexagon {
         );
     }
 
+    public float getLeftVertLength(){
+        return leftBottom.y - leftTop.y;
+    }
+
+    public Path getLeftVertPath(){
+        final Path path = new Path();
+        path.moveTo(leftBottom.x, leftBottom.y);
+        path.lineTo(leftTop.x, leftTop.y);
+        return path;
+    }
+
     public Path getFillablePath(){
         if(fillablePath != null) return fillablePath;
 

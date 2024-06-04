@@ -46,6 +46,23 @@ public class CellState extends Cell{
     public Path getFillablePath(){
         return hexagon.getFillablePath();
     }
+    public float getLeftVertLength(){
+        return hexagon.getLeftVertLength();
+    }
+    public Point getLeftTopPoint(){
+        return hexagon.leftTop;
+    }
+    public Point getLeftBottomPoint(){
+        return hexagon.leftBottom;
+    }
+    public Point getTopMiddlePoint(){
+        return hexagon.topMiddle;
+    }
+
+    public Point getBottomMiddlePoint(){
+        return hexagon.bottomMiddle;
+    }
+
 
     public enum MyColor {
         RED(1), BLUE(2), BLANK(0);
