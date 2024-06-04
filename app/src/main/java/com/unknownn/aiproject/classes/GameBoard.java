@@ -1,5 +1,6 @@
 package com.unknownn.aiproject.classes;
 
+import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -200,7 +201,7 @@ public class GameBoard extends View {
 
         clickedCell.setMyColor( redTurn ? CellState.MyColor.RED : CellState.MyColor.BLUE );
         if(boardListener != null) {
-            processForAnimation(clickedCell);
+            processForAnimation(clickedCell, true);
             boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
         }
 
@@ -208,8 +209,8 @@ public class GameBoard extends View {
         if(redTurn){
             isTheFirstMove = false;
         }
-        invalidate();
-        checkForGameOver(true);
+//        invalidate();
+//        checkForGameOver(true);
     }
 
     private void initBrush(){
@@ -276,6 +277,7 @@ public class GameBoard extends View {
                 }
             }
 
+            setUpAnimator();
             initWhoseMovePath();
             initTwoBoundaries();
             initBotProgressPoint();
@@ -289,18 +291,44 @@ public class GameBoard extends View {
         // stop immediately
     }
 
-    final ValueAnimator animator = ValueAnimator.ofInt(0,NO_OF_INTERMEDIATE_PATHS-1);
-    private void processForAnimation(final CellState cell){
-        this.cellToAnimate = cell;
-        animateIndex = 0;
-        createIntermediatePaths(cell);
-
-
+    private final ValueAnimator animator = ValueAnimator.ofInt(0,NO_OF_INTERMEDIATE_PATHS-1);
+    private boolean isUserMove = false;
+    private void setUpAnimator(){
         animator.setDuration(500);
         animator.addUpdateListener(valueAnimator -> {
             animateIndex = (int) valueAnimator.getAnimatedValue();
             invalidate();
         });
+        animator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(@NonNull Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(@NonNull Animator animator) {
+                checkForGameOver(isUserMove);
+                invalidate();
+            }
+
+            @Override
+            public void onAnimationCancel(@NonNull Animator animator) {
+                checkForGameOver(isUserMove);
+                invalidate();
+            }
+
+            @Override
+            public void onAnimationRepeat(@NonNull Animator animator) {
+
+            }
+        });
+    }
+    private void processForAnimation(final CellState cell, boolean isUserMove){
+        this.cellToAnimate = cell;
+        animateIndex = 0;
+        createIntermediatePaths(cell);
+
+        this.isUserMove = isUserMove;
         animator.start();
     }
 
@@ -546,7 +574,7 @@ public class GameBoard extends View {
 
             mHandler.postDelayed(() -> {
                 states[x][y].setMyColor(CellState.MyColor.BLUE);
-                processForAnimation(states[x][y]);
+                processForAnimation(states[x][y], false);
 
                 if(boardListener != null) boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
                 redTurn = !redTurn;
