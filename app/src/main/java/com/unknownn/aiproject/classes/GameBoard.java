@@ -1,11 +1,13 @@
 package com.unknownn.aiproject.classes;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
@@ -98,6 +100,7 @@ public class GameBoard extends View {
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
+
         for(int i=0; i<N; i++){
             for(int j=0; j<N; j++){
                 CellState cell = states[i][j];
@@ -111,7 +114,12 @@ public class GameBoard extends View {
 
                 if(!cell.isBlank()) { // draw or animate if first time
                     if(cell == cellToAnimate){
-                        canvas.drawPath( intermediatePaths[animateIndex], cell.isRed() ? redBrush : blueBrush );
+                        if(moveLine){
+                            canvas.drawPath( leftVertPath, cell.isRed() ? redBrush : blueBrush );
+                        }
+                        else{
+                            canvas.drawPath( intermediatePaths[animateIndex], cell.isRed() ? redBrush : blueBrush );
+                        }
                     }
                     else{
                         canvas.drawPath( cell.getFillablePath(), cell.isRed() ? redBrush : blueBrush );
@@ -140,6 +148,7 @@ public class GameBoard extends View {
         // bot progress
         textBrush.setColor( Color.BLACK );
         canvas.drawText(botProgressPercentStr, botProgressCenter.x, botProgressCenter.y, textBrush);
+
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -287,19 +296,22 @@ public class GameBoard extends View {
 
     private void stopAnimatorNow(){
         animateIndex = NO_OF_INTERMEDIATE_PATHS - 1;
-        animator.cancel();
+        cellAnimator.cancel();
+
+        if(lineAnimator != null) lineAnimator.cancel();
         // stop immediately
     }
 
-    private final ValueAnimator animator = ValueAnimator.ofInt(0,NO_OF_INTERMEDIATE_PATHS-1);
+    private final ValueAnimator cellAnimator = ValueAnimator.ofInt(0,NO_OF_INTERMEDIATE_PATHS-1);
+    private ValueAnimator lineAnimator = null;
     private boolean isUserMove = false;
     private void setUpAnimator(){
-        animator.setDuration(500);
-        animator.addUpdateListener(valueAnimator -> {
+        cellAnimator.setDuration(500);
+        cellAnimator.addUpdateListener(valueAnimator -> {
             animateIndex = (int) valueAnimator.getAnimatedValue();
             invalidate();
         });
-        animator.addListener(new Animator.AnimatorListener() {
+        cellAnimator.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(@NonNull Animator animator) {
 
@@ -323,14 +335,59 @@ public class GameBoard extends View {
             }
         });
     }
+
     private void processForAnimation(final CellState cell, boolean isUserMove){
         this.cellToAnimate = cell;
-        animateIndex = 0;
+        moveLine = true;
         createIntermediatePaths(cell);
 
-        this.isUserMove = isUserMove;
-        animator.start();
+        moveVertLine(cell, () -> {
+            moveLine = false;
+            animateIndex = 0;
+
+            GameBoard.this.isUserMove = isUserMove;
+            cellAnimator.start();
+        });
     }
+
+    private void moveVertLine(CellState cell, LineCallBack callBack){
+        final Matrix shiftMatrix = new Matrix();
+        float[] prevX = new float[]{states[0][cell.y].hexagon.leftTop.x};
+
+        lineAnimator = ValueAnimator.ofFloat(states[0][cell.y].hexagon.leftTop.x+10, cell.hexagon.leftTop.x);
+        lineAnimator.setDuration( cell.x * 200L);
+
+        lineAnimator.addUpdateListener(valueAnimator -> {
+            float position = (float)valueAnimator.getAnimatedValue();
+            float dx = position - prevX[0];
+            shiftMatrix.setTranslate(dx,0);
+            leftVertPath.transform(shiftMatrix);
+
+            prevX[0] = position;
+            invalidate();
+        });
+        lineAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                callBack.onEnd();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                super.onAnimationCancel(animation);
+                callBack.onEnd();
+            }
+        });
+        lineAnimator.start();
+    }
+
+    private interface LineCallBack{
+        void onEnd();
+    }
+
+    private Path leftVertPath = new Path();
+    private boolean moveLine = false;
 
     private void createIntermediatePaths(final CellState cell){
         final Path path = new Path(cell.getFillablePath());
@@ -339,10 +396,10 @@ public class GameBoard extends View {
 
         final float leftVertLength = cell.getLeftVertLength();
 
-        final Point leftTop = cell.getLeftTopPoint();
-        final Point leftBottom = cell.getLeftBottomPoint();
-        final Point topMiddle = cell.getTopMiddlePoint();
-        final Point bottomMiddle = cell.getBottomMiddlePoint();
+        final Point leftTop = cell.hexagon.leftTop;
+        final Point leftBottom = cell.hexagon.leftBottom;
+        final Point topMiddle = cell.hexagon.topMiddle;
+        final Point bottomMiddle = cell.hexagon.bottomMiddle;
 
         final float topHorizLength = ( pm.getLength() - 2*leftVertLength ) / 2f;
         final float divLength = (topHorizLength / NO_OF_INTERMEDIATE_PATHS);
@@ -371,6 +428,17 @@ public class GameBoard extends View {
 
             intermediatePaths[i-1] = subPath;
         }
+
+        leftVertPath = new Path();
+
+        final Hexagon hex = states[0][cell.y].hexagon;
+        leftVertPath.moveTo(hex.leftTop.x, hex.leftTop.y);
+        leftVertPath.lineTo(hex.leftTop.x+10, hex.leftTop.y);
+
+        leftVertPath.lineTo(hex.leftTop.x+10, hex.leftBottom.y);
+        leftVertPath.lineTo(hex.leftTop.x, hex.leftBottom.y);
+        leftVertPath.lineTo(hex.leftTop.x, hex.leftTop.y);
+        invalidate();
     }
 
     private void initTwoBoundaries(){
