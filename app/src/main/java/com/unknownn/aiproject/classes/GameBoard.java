@@ -225,10 +225,10 @@ public class GameBoard extends View {
         }
 
         redBrush.setColor(Color.RED);
-        lightRedBrush.setColor(Color.argb(120,120,20,20));
+        lightRedBrush.setColor(Color.argb(30,120,20,20));
 
         blueBrush.setColor(Color.BLUE);
-        lightBlueBrush.setColor(Color.argb(120,20,20,150));
+        lightBlueBrush.setColor(Color.argb(30,20,20,150));
 
         gridBrush.setStyle(Paint.Style.STROKE);
 
