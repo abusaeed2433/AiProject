@@ -189,6 +189,8 @@ public class GameBoard extends View {
         }
 
         clickedCell.setMyColor( redTurn ? CellState.MyColor.RED : CellState.MyColor.BLUE );
+        if(boardListener != null) boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
+
         redTurn = !redTurn;
         if(redTurn){
             isTheFirstMove = false;
@@ -398,7 +400,10 @@ public class GameBoard extends View {
             }
         }
         else { // game is finished
-            if (boardListener != null) boardListener.onGameEnds(winner);
+            if (boardListener != null) {
+                boardListener.onGameEnds(winner);
+                boardListener.onSoundPlayRequest(SoundController.SoundType.GAME_OVER);
+            }
         }
     }
 
@@ -459,6 +464,7 @@ public class GameBoard extends View {
 
             mHandler.postDelayed(() -> {
                 states[x][y].setMyColor(CellState.MyColor.BLUE);
+                if(boardListener != null) boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
                 redTurn = !redTurn;
                 checkForGameOver(false);
                 invalidate();
@@ -566,6 +572,7 @@ public class GameBoard extends View {
         void onMessageToShow(String message);
         void onAlgoChanged();
         void onGameEnds(CellState.MyColor winner);
+        void onSoundPlayRequest(SoundController.SoundType soundType);
     }
 
 }

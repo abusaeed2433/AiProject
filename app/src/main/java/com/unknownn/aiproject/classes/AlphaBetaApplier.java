@@ -31,6 +31,7 @@ public class AlphaBetaApplier {
         if(instance == null) {
             instance = new AlphaBetaApplier();
         }
+        instance.botProgressInt.set(0);
         return instance;
     }
 

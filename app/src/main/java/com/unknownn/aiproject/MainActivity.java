@@ -11,12 +11,14 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.unknownn.aiproject.classes.CellState;
 import com.unknownn.aiproject.classes.GameBoard;
 import com.unknownn.aiproject.classes.Helper;
+import com.unknownn.aiproject.classes.SoundController;
 import com.unknownn.aiproject.databinding.ActivityMainBinding;
 import com.unknownn.aiproject.enums.PredictionAlgo;
 
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding = null;
+    private SoundController soundController = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupBoard(){
+        soundController = SoundController.getInstance(this);
+
         binding.gameBoard.setBoardListener(new GameBoard.BoardListener() {
             @Override
             public void onMessageToShow(String message) {
@@ -73,6 +77,11 @@ public class MainActivity extends AppCompatActivity {
                         .setNegativeButton("Exit", (dialogInterface, i) -> MainActivity.this.finishAffinity())
                         .setCancelable(false)
                         .show();
+            }
+
+            @Override
+            public void onSoundPlayRequest(SoundController.SoundType soundType) {
+                soundController.playSound(soundType);
             }
         });
     }
