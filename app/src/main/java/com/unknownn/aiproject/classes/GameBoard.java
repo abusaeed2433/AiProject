@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PathMeasure;
 import android.graphics.Point;
 import android.os.Handler;
 import android.os.Looper;
@@ -32,6 +33,7 @@ import kotlin.Pair;
 
 public class GameBoard extends View {
     private static final long CLICK_DURATION = 300;
+    private static final int NO_OF_INTERMEDIATE_PATHS = 20;
     public static final float STROKE_WIDTH = 4f;
     public static final float BOUNDARY_GAP = 12f;
     private static final int N = 5;
@@ -67,6 +69,9 @@ public class GameBoard extends View {
     private PredictionAlgo predictionAlgo = PredictionAlgo.ALPHA_BETA_PRUNING;
 
     private final Cell[][] selectedBoardFromGenetic = new Cell[N][N];
+    private Cell cellToAnimate = null;
+    private final Path[] intermediatePaths = new Path[NO_OF_INTERMEDIATE_PATHS];
+    private int animateIndex = 0;
 
     public GameBoard(Context context) {
         super(context);
@@ -103,8 +108,13 @@ public class GameBoard extends View {
                     canvas.drawPath( cell.getFillablePath(), selectedBoardFromGenetic[i][j].isRed() ? lightRedBrush : lightBlueBrush );
                 }
 
-                if(!cell.isBlank()) {
-                    canvas.drawPath( cell.getFillablePath(), cell.isRed() ? redBrush : blueBrush );
+                if(!cell.isBlank()) { // draw or animate if first time
+                    if(cell == cellToAnimate){
+                        canvas.drawPath( intermediatePaths[animateIndex], cell.isRed() ? redBrush : blueBrush );
+                    }
+                    else{
+                        canvas.drawPath( cell.getFillablePath(), cell.isRed() ? redBrush : blueBrush );
+                    }
                 }
 
                 Point pt = cell.getTextCenter();
@@ -189,7 +199,10 @@ public class GameBoard extends View {
         }
 
         clickedCell.setMyColor( redTurn ? CellState.MyColor.RED : CellState.MyColor.BLUE );
-        if(boardListener != null) boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
+        if(boardListener != null) {
+            processForAnimation(clickedCell);
+            boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
+        }
 
         redTurn = !redTurn;
         if(redTurn){
@@ -268,6 +281,35 @@ public class GameBoard extends View {
             initBotProgressPoint();
             invalidate();
         });
+    }
+
+    private void processForAnimation(final CellState cell){
+        this.cellToAnimate = cell;
+        animateIndex = 0;
+        createIntermediatePaths(cell.getFillablePath());
+
+        final ValueAnimator animator = ValueAnimator.ofInt(0,NO_OF_INTERMEDIATE_PATHS-1);
+        animator.setDuration(500);
+        animator.addUpdateListener(valueAnimator -> {
+            animateIndex = (int) valueAnimator.getAnimatedValue();
+            invalidate();
+        });
+        animator.start();
+    }
+
+    private void createIntermediatePaths(final Path mainPath){
+        final Path path = new Path(mainPath);
+
+        final PathMeasure pm = new PathMeasure(path,true);
+        final float length = pm.getLength();
+        final float divLength = (length / NO_OF_INTERMEDIATE_PATHS);
+
+        for(int i=1; i<=NO_OF_INTERMEDIATE_PATHS; i++){
+            final Path subPath = new Path();
+
+            pm.getSegment(0, divLength * i, subPath, true);
+            intermediatePaths[i-1] = subPath;
+        }
     }
 
     private void initTwoBoundaries(){
@@ -414,7 +456,6 @@ public class GameBoard extends View {
         }
     }
 
-
     private Hexagon getHexagon(int x, int y, int triangleHeight) {
         int leftPadding = (int) ( WIDTH_PAD + (y*CELL_WIDTH/2f) );
         final int left = (int)(x * CELL_WIDTH + leftPadding);
@@ -471,6 +512,8 @@ public class GameBoard extends View {
 
             mHandler.postDelayed(() -> {
                 states[x][y].setMyColor(CellState.MyColor.BLUE);
+                processForAnimation(states[x][y]);
+
                 if(boardListener != null) boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
                 redTurn = !redTurn;
                 checkForGameOver(false);
