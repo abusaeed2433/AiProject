@@ -311,27 +311,12 @@ public class GameBoard extends View {
             animateIndex = (int) valueAnimator.getAnimatedValue();
             invalidate();
         });
-        cellAnimator.addListener(new Animator.AnimatorListener() {
+        cellAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
-            public void onAnimationStart(@NonNull Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(@NonNull Animator animator) {
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
                 checkForGameOver(isUserMove);
                 invalidate();
-            }
-
-            @Override
-            public void onAnimationCancel(@NonNull Animator animator) {
-                checkForGameOver(isUserMove);
-                invalidate();
-            }
-
-            @Override
-            public void onAnimationRepeat(@NonNull Animator animator) {
-
             }
         });
     }
@@ -646,8 +631,8 @@ public class GameBoard extends View {
 
                 if(boardListener != null) boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
                 redTurn = !redTurn;
-                checkForGameOver(false);
-                invalidate();
+//                checkForGameOver(false);
+//                invalidate();
             }, delay);
         });
     }
