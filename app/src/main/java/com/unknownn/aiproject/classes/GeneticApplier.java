@@ -223,9 +223,46 @@ public class GeneticApplier {
         return populations;
     }
 
+    private boolean isPrevSolutionWinnable(List<Cell> solution, final CellState.MyColor[][] curBoard){
+        if(solution == null) return false;
+
+        final CellState.MyColor[][] copiedBoard = new CellState.MyColor[N][N];
+
+        for(int x=0; x<N; x++){
+            System.arraycopy(board[x], 0, copiedBoard[x], 0, N);
+        }
+
+        for(int i=solution.size()-1; i>=0; i--){
+            final Cell cell = solution.get(i);
+            if(copiedBoard[cell.x][cell.y] == CellState.MyColor.BLANK) {
+                copiedBoard[cell.x][cell.y] = cell.myColor;
+            }
+            else{
+                solution.remove(cell); // not valid anymore
+            }
+        }
+
+        final CellState.MyColor winner = Calculator.getGameWinner(copiedBoard, N);
+
+        return winner == CellState.MyColor.BLUE;
+    }
+
+    private List<Cell> prevBestSolution = null;
     public void predict(int N, CellState.MyColor[][] board){
         this.N = N;
         this.board = board;
+
+        if( isPrevSolutionWinnable(prevBestSolution, board) ){
+            geneticListener.onProgress(100);
+            for(Cell cell : prevBestSolution){
+                if(cell.myColor == CellState.MyColor.BLUE){ // try to choose the best
+                    geneticListener.onFinished(new Pair<>(cell.x, cell.y));
+                    prevBestSolution.remove(cell);
+                    return;
+                }
+            }
+            return;
+        }
 
         List<List<Cell>> populations = initPopulation(board);
         if(populations == null) return;
@@ -265,11 +302,12 @@ public class GeneticApplier {
             geneticListener.onProgress(progress);
         }
 
-        // todo use previous if can be used
+        prevBestSolution = globalBest;
         for(Cell cell : globalBest){
-            if(cell.myColor == CellState.MyColor.RED){
+            if(cell.myColor == CellState.MyColor.BLUE){
                 geneticListener.onDrawRequest(globalBest);
                 geneticListener.onFinished(new Pair<>(cell.x, cell.y));
+                prevBestSolution.remove(cell);
                 return;
             }
         }
