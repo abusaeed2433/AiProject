@@ -40,6 +40,7 @@ public class GameBoard extends View {
     public static final float STROKE_WIDTH = 4f;
     public static final float BOUNDARY_GAP = 12f;
     private static final int N = 5;
+    private static final int N_N = 25;
 
     private final CellState[][] states = new CellState[N][N];
 
@@ -537,6 +538,15 @@ public class GameBoard extends View {
         invalidate();
     }
 
+    private void setPredictionAlgo(PredictionAlgo algo){
+        if(this.predictionAlgo != algo){
+             mHandler.post(() -> {
+                 if(boardListener != null) boardListener.onAlgoChanged();
+             });
+        }
+        this.predictionAlgo = algo;
+    }
+
     public void swapPredictionAlgo(boolean requestedByBot){
         if( !redTurn && !requestedByBot) {
             if(boardListener != null) boardListener.onMessageToShow("Be patient");
@@ -602,12 +612,29 @@ public class GameBoard extends View {
         return field;
     }
 
+    private int countEmptyCell(){
+        int count = 0;
+        for(int i=0; i<N; i++){
+            for(int j=0; j<N; j++){
+                if(states[i][j].isBlank()) count++;
+            }
+        }
+        return count;
+    }
+
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private String botProgressPercentStr = "---";
     private final ExecutorService service = Executors.newSingleThreadExecutor();
+    private int prevTimeTaken = 1000; // in seconds
     private void startPredicting(){
         service.execute(() -> {
             long startTime = System.currentTimeMillis();
+
+            PredictionAlgo algo = FuzzyApplier
+                    .getInstance()
+                    .predictAlgo(N_N, countEmptyCell(), prevTimeTaken);
+
+            setPredictionAlgo(algo);
 
             Pair<Integer,Integer> xy = (predictionAlgo == PredictionAlgo.ALPHA_BETA_PRUNING )
                     ? predictByAlphaBeta() : predictByGeneticAlgo();
@@ -620,6 +647,8 @@ public class GameBoard extends View {
             long endTime = System.currentTimeMillis();
             long dif = (endTime - startTime);
 
+            prevTimeTaken = (int)(dif/1000);
+
             System.out.println("Actual time taken: "+dif);
             botProgressPercentStr = "Took: "+ dif +"ms";
 
@@ -631,8 +660,6 @@ public class GameBoard extends View {
 
                 if(boardListener != null) boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
                 redTurn = !redTurn;
-//                checkForGameOver(false);
-//                invalidate();
             }, delay);
         });
     }
