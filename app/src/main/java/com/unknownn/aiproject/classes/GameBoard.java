@@ -569,7 +569,7 @@ public class GameBoard extends View {
 
         if( winner == null) { // predict next move is bot`s turn
             if( isUserMove ){ // true = current turn was user's turn
-                startPredicting();
+                startPredicting(null);
             }
         }
         else { // game is finished
@@ -625,15 +625,17 @@ public class GameBoard extends View {
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private String botProgressPercentStr = "---";
     private final ExecutorService service = Executors.newSingleThreadExecutor();
-    private int prevTimeTaken = 1000; // in seconds
-    private void startPredicting(){
+    private int prevTimeTaken = 100; // in seconds
+    private void startPredicting(PredictionAlgo reqAlgo){ // will use algo without any check if not null
         service.execute(() -> {
             long startTime = System.currentTimeMillis();
 
-            PredictionAlgo algo = FuzzyApplier
-                    .getInstance()
-                    .predictAlgo(N_N, countEmptyCell(), prevTimeTaken);
-
+            PredictionAlgo algo = reqAlgo;
+            if(reqAlgo == null) {
+                algo = FuzzyApplier
+                        .getInstance()
+                        .predictAlgo(N_N, countEmptyCell(), prevTimeTaken);
+            }
             setPredictionAlgo(algo);
 
             Pair<Integer,Integer> xy = (predictionAlgo == PredictionAlgo.ALPHA_BETA_PRUNING )
@@ -647,7 +649,7 @@ public class GameBoard extends View {
             long endTime = System.currentTimeMillis();
             long dif = (endTime - startTime);
 
-            prevTimeTaken = (int)(dif/1000);
+            prevTimeTaken = (prevTimeTaken + (int)(dif/1000)) / 2; // average so that it decreases slowly
 
             System.out.println("Actual time taken: "+dif);
             botProgressPercentStr = "Took: "+ dif +"ms";
@@ -681,9 +683,14 @@ public class GameBoard extends View {
                     }
 
                     @Override
-                    public void onError(String message) {
+                    public void onError(String message, boolean changeToGenetic) {
                         mHandler.post(() -> {
-                            if(boardListener != null) boardListener.onMessageToShow(message);
+                            if(!changeToGenetic && boardListener != null) boardListener.onMessageToShow(message);
+                            if(changeToGenetic) {
+                                futureResult.complete(null);
+                                swapPredictionAlgo(true);
+                                startPredicting(PredictionAlgo.GENETIC_ALGO);
+                            }
                         });
                     }
 
@@ -730,7 +737,7 @@ public class GameBoard extends View {
                             if(changeToAlphaBeta) {
                                 futureResult.complete(null);
                                 swapPredictionAlgo(true);
-                                startPredicting();
+                                startPredicting(null);
                             }
                         });
                     }

@@ -5,6 +5,6 @@ import kotlin.Pair;
 public interface AlphaBetaListener {
     void onProgress(int progress);
     void onFinished(Pair<Integer,Integer> xy);
-    void onError(String message);
+    void onError(String message, boolean changeToGenetic);
     void onCellValueUpdated(int x, int y, int movVal);
 }
