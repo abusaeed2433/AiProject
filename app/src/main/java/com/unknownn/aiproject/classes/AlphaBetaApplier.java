@@ -111,6 +111,7 @@ public class AlphaBetaApplier {
             }catch (InterruptedException | ExecutionException ignored){}
         }
 
+        if(stoppedByTLE) cellToPlace.set(null);
         alphaBetaListener.onFinished(cellToPlace.get());
         if(timerTracker != null) timerTracker.cancel();
         //services.shutdownNow(); // todo may arise issue. check if any
@@ -208,10 +209,9 @@ public class AlphaBetaApplier {
 
         int emptyPercent = (100 * emptyCount) / N_N;
 
-        if(emptyPercent > 70) return N; // early
-
-        if(emptyPercent > 50) return N+3; // medium
-
+        if(emptyPercent > 70) return N/2; // early
+        if(emptyPercent > 50) return N+1; // medium
+        if(emptyPercent > 30) return (N*N) / 2; // high
         return N_N; // critical
     }
 
