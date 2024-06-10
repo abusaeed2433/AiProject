@@ -15,12 +15,12 @@
 
 
 ### Fuzzification:
-- `no_of_empty_cell`:
-![Empty cell](no_of_empty_cell.png)
-- `alpha_beta_time`:
-![Alpha beta time](alpha_beta_time.png)
-- `algo_type`: 
-![Algo type](algo_type.png)
+#### `no_of_empty_cell`:
+ ![Empty cell](./images/no_of_empty_cell.png)
+#### `alpha_beta_time`:
+ ![Alpha beta time](./images/alpha_beta_time.png)
+#### `algo_type`:
+ ![Algo type](./images/algo_type.png)
 
 ### Rules evaluation
 - 1st rule:
