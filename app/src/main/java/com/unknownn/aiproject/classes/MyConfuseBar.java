@@ -44,7 +44,7 @@ public class MyConfuseBar extends View {
                     8,
                     getWidth()/2f + 0.3f*getHeight(),
                     0.6f*getHeight() - 8,
-                    angle,270,
+                    angle,225,
                     false,
                     paintBrush
             );
@@ -86,7 +86,7 @@ public class MyConfuseBar extends View {
                     }
                     else if(curTime - startTime >= 4000){ // 4s
                         animator.setDuration(200);
-                        paintBrush.setColor(Color.CYAN);
+                        paintBrush.setColor(Color.MAGENTA);
                     }
                     else if(curTime - startTime >= 2000){ // 2s
                         animator.setDuration(350);
@@ -115,7 +115,7 @@ public class MyConfuseBar extends View {
         paintBrush.setStyle(Paint.Style.STROKE);
         paintBrush.setStrokeCap(Paint.Cap.ROUND);
         paintBrush.setStrokeJoin(Paint.Join.ROUND);
-        paintBrush.setStrokeWidth(6f);
+        paintBrush.setStrokeWidth(5f);
 
         textBrush.setColor(Color.BLACK);
         textBrush.setTextAlign(Paint.Align.CENTER);
