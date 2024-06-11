@@ -163,14 +163,7 @@ public class GeneticApplier {
             copiedBoard[cell.x][cell.y] = cell.myColor;
         }
 
-        // todo change as much as possible the predict the best value
-        final CellState.MyColor winner = Calculator.getGameWinner(copiedBoard, N);
-
-        if( winner == CellState.MyColor.BLUE ) return LOSS; // -100
-
-        if( winner == CellState.MyColor.RED ) return WIN; // 100
-
-        return 0;
+        return Calculator.getBoardScore(copiedBoard,N);
     }
 
     @Nullable
@@ -268,7 +261,6 @@ public class GeneticApplier {
 
         List<List<Cell>> populations = initPopulation(board);
         if(populations == null) return;
-
 
         List<Cell> globalBest = getTheBest(populations);
         int globalBestVal = calcFitness(board, globalBest);

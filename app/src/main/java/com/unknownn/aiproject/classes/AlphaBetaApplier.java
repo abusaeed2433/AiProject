@@ -1,7 +1,9 @@
 package com.unknownn.aiproject.classes;
 
 import static com.unknownn.aiproject.classes.Calculator.LOSS;
+import static com.unknownn.aiproject.classes.Calculator.NO_WIN;
 import static com.unknownn.aiproject.classes.Calculator.WIN;
+import static com.unknownn.aiproject.classes.Calculator.getBoardScore;
 
 import com.unknownn.aiproject.listener.AlphaBetaListener;
 
@@ -20,7 +22,8 @@ import kotlin.Pair;
 
 public class AlphaBetaApplier {
 
-    private static final long TIME_THRESHOLD = 12000L;
+    private static final long TIME_THRESHOLD = 112000L; // todo remove this later. 112s
+
     private int N;
     private int N_N;
     private int DEPTH_LIMIT;
@@ -119,13 +122,14 @@ public class AlphaBetaApplier {
 
     private int applyAlphaBeta(CellState.MyColor[][] field, int depth, final boolean isMax, int alpha, int beta){
         if(stoppedByTLE) return 0;
-        int score = evaluate(field);
 
-        if( score == WIN || score == LOSS ) {
-            return score; // someone wins
+        if( depth >= DEPTH_LIMIT ) {
+            return Calculator.getBoardScore(field,N);
         }
 
-        if( depth >= DEPTH_LIMIT ) return 0;
+        final CellState.MyColor winner = Calculator.getGameWinner(field,N);
+        if(winner == CellState.MyColor.BLUE) return WIN;
+        if(winner == CellState.MyColor.RED) return LOSS;
 
         int best = isMax ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
@@ -209,20 +213,13 @@ public class AlphaBetaApplier {
 
         int emptyPercent = (100 * emptyCount) / N_N;
 
-        if(emptyPercent > 70) return N/2; // early
-        if(emptyPercent > 50) return N+1; // medium
-        if(emptyPercent > 30) return (N*N) / 2; // high
+        if(emptyPercent > 70) return emptyCount/4; // early
+
+        if(emptyPercent > 50) return emptyCount/4; // medium
+
+        if(emptyPercent > 30) return emptyCount; // high
         return N_N; // critical
     }
 
-    private int evaluate(CellState.MyColor[][] field){
-        final CellState.MyColor winner = Calculator.getGameWinner(field,N);
-
-        if( winner == CellState.MyColor.BLUE ) return WIN;
-
-        if( winner == CellState.MyColor.RED ) return LOSS;
-
-        return 0;
-    }
 
 }

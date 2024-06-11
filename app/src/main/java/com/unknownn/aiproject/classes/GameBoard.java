@@ -39,6 +39,7 @@ public class GameBoard extends View {
     private static final int NO_OF_INTERMEDIATE_PATHS = 20;
     public static final float STROKE_WIDTH = 4f;
     public static final float BOUNDARY_GAP = 12f;
+    private static final boolean debugMode = true;
     private static final int N = 5;
     private static final int N_N = 25;
 
@@ -109,10 +110,12 @@ public class GameBoard extends View {
 
                 canvas.drawPath( cell.getStrokePath(), gridBrush );
 
-                // todo comment to hide GA solution
-//                if(selectedBoardFromGenetic[i][j] != null && selectedBoardFromGenetic[i][j].x == -1){
-//                    canvas.drawPath( cell.getFillablePath(), selectedBoardFromGenetic[i][j].isRed() ? lightRedBrush : lightBlueBrush );
-//                }
+                if(debugMode) {
+                    // todo comment to hide GA solution
+                    if(selectedBoardFromGenetic[i][j] != null && selectedBoardFromGenetic[i][j].x == -1){
+                        canvas.drawPath( cell.getFillablePath(), selectedBoardFromGenetic[i][j].isRed() ? lightRedBrush : lightBlueBrush );
+                    }
+                }
 
                 if(!cell.isBlank()) { // draw or animate if first time
                     if(cell == cellToAnimate){
@@ -131,15 +134,16 @@ public class GameBoard extends View {
 
                 textBrush.setColor( cell.isBlank() ? Color.BLACK : Color.WHITE );
 
-//                canvas.drawText((i*N)+j+": "+cell.score, pt.x,pt.y,textBrush);
                 // todo comment to hide cell number, Alpha Beta score and cell value
-//                Point pt = cell.getTextCenter();
-//                canvas.drawText(
-//                        ((i*N)+j)+ (cell.score.isEmpty() ? cell.score : ": "+cell.score),
-//                        pt.x,
-//                        pt.y,
-//                        textBrush
-//                );
+                if(debugMode) {
+                    Point pt = cell.getTextCenter();
+                    canvas.drawText(
+                            ((i * N) + j) + (cell.score.isEmpty() ? cell.score : ": " + cell.score),
+                            pt.x,
+                            pt.y,
+                            textBrush
+                    );
+                }
             }
         }
 
