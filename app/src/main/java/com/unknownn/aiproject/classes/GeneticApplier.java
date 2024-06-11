@@ -254,6 +254,8 @@ public class GeneticApplier {
 
         if( isPrevSolutionWinnable(prevBestSolution, board) ){
             geneticListener.onProgress(100);
+            geneticListener.onDrawRequest(prevBestSolution);
+
             for(Cell cell : prevBestSolution){
                 if(cell.myColor == CellState.MyColor.BLUE){ // try to choose the best
                     geneticListener.onFinished(new Pair<>(cell.x, cell.y));
@@ -303,9 +305,9 @@ public class GeneticApplier {
         }
 
         prevBestSolution = globalBest;
+        geneticListener.onDrawRequest(globalBest);
         for(Cell cell : globalBest){
             if(cell.myColor == CellState.MyColor.BLUE){
-                geneticListener.onDrawRequest(globalBest);
                 geneticListener.onFinished(new Pair<>(cell.x, cell.y));
                 prevBestSolution.remove(cell);
                 return;

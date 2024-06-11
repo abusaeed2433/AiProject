@@ -130,7 +130,13 @@ public class GameBoard extends View {
                 Point pt = cell.getTextCenter();
                 textBrush.setColor( cell.isBlank() ? Color.BLACK : Color.WHITE );
 
-                canvas.drawText((i*N)+j+": "+cell.score, pt.x,pt.y,textBrush);
+//                canvas.drawText((i*N)+j+": "+cell.score, pt.x,pt.y,textBrush);
+                canvas.drawText(
+                        ((i*N)+j)+ (cell.score.isEmpty() ? cell.score : ": "+cell.score),
+                        pt.x,
+                        pt.y,
+                        textBrush
+                );
             }
         }
 
@@ -629,6 +635,13 @@ public class GameBoard extends View {
     private void startPredicting(PredictionAlgo reqAlgo){ // will use algo without any check if not null
         if(boardListener != null) boardListener.onProgressBarUpdate(true);
 
+        for(int i=0; i<N; i++){
+            for(int j=0; j<N; j++){
+                states[i][j].score = ""; // empty
+                selectedBoardFromGenetic[i][j] = null;
+            }
+        }
+
         service.execute(() -> {
             long startTime = System.currentTimeMillis();
 
@@ -706,7 +719,7 @@ public class GameBoard extends View {
 
                     @Override
                     public void onCellValueUpdated(int x, int y, int moveVal) {
-                        states[x][y].score = moveVal;
+                        states[x][y].score = moveVal+"";
                         mHandler.post(() -> invalidate());
                     }
 
