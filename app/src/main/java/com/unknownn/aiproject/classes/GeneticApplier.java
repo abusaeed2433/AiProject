@@ -100,7 +100,7 @@ public class GeneticApplier {
                 Cell cellOne = parentOne.get(i);
                 while (mapOne.containsKey(cellOne)) {
                     cellOne = mapOne.get(cellOne);
-                    System.out.println(cellOne);
+//                    System.out.println(cellOne);
                 }
 
                 assert cellOne != null;

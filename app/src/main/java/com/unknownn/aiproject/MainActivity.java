@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setClickListener(){
-        binding.tvAlgoType.setOnClickListener( v -> binding.gameBoard.swapPredictionAlgo(false));
+//        binding.tvAlgoType.setOnClickListener( v -> binding.gameBoard.swapPredictionAlgo(false));
     }
 
     private void setupBoard(){
@@ -56,7 +56,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAlgoChanged() {
                 Helper.showSafeToast(MainActivity.this,"Prediction algo is changed");
-
 
                 if(binding.gameBoard.getPredictionAlgo() == PredictionAlgo.ALPHA_BETA_PRUNING){
                     binding.tvAlgoType.setText(getString(R.string.alpha_beta));
@@ -82,6 +81,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSoundPlayRequest(SoundController.SoundType soundType) {
                 soundController.playSound(soundType);
+            }
+
+            @Override
+            public void onProgressBarUpdate(boolean show) {
+                if(show){
+                    binding.myConfuseBar.startRotating();
+                }
+                else{
+                    binding.myConfuseBar.stopRotating();
+                }
+            }
+
+            @Override
+            public void onProgressUpdate(String strProgress) {
+                binding.myConfuseBar.setStrProgress(strProgress);
             }
         });
     }

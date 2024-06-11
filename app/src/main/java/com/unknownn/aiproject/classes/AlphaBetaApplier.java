@@ -162,7 +162,7 @@ public class AlphaBetaApplier {
             AtomicInteger bestVal, AtomicReference<Pair<Integer,Integer>> cellToPlace){
 
         return services.submit(()->{
-            System.out.println("Depth limit: "+DEPTH_LIMIT);
+//            System.out.println("Depth limit: "+DEPTH_LIMIT);
 
             final CellState.MyColor[][] field = new CellState.MyColor[N][N];
             for(int i=0; i<N; i++){
@@ -175,7 +175,7 @@ public class AlphaBetaApplier {
 
             if(stoppedByTLE) return;
 
-            System.out.println(moveVal);
+//            System.out.println(moveVal);
 
             if (moveVal > bestVal.get()) {
                 cellToPlace.set( new Pair<>(x,y) );

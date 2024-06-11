@@ -69,7 +69,7 @@ public class GameBoard extends View {
     private float circleRadius = 0f;
     private final Point circleCenter = new Point(0,0);
     // for bot progress
-    private final Point botProgressCenter = new Point(0,0);
+
     private PredictionAlgo predictionAlgo = PredictionAlgo.ALPHA_BETA_PRUNING;
 
     private final Cell[][] selectedBoardFromGenetic = new Cell[N][N];
@@ -148,7 +148,7 @@ public class GameBoard extends View {
 
         // bot progress
         textBrush.setColor( Color.BLACK );
-        canvas.drawText(botProgressPercentStr, botProgressCenter.x, botProgressCenter.y, textBrush);
+//        canvas.drawText(botProgressPercentStr, botProgressCenter.x, botProgressCenter.y, textBrush);
 
     }
 
@@ -290,7 +290,7 @@ public class GameBoard extends View {
             setUpAnimator();
             initWhoseMovePath();
             initTwoBoundaries();
-            initBotProgressPoint();
+            // initBotProgressPoint();
             invalidate();
         });
     }
@@ -507,16 +507,16 @@ public class GameBoard extends View {
         animator.setRepeatMode(ValueAnimator.REVERSE);
         animator.start();
     }
-    private void initBotProgressPoint(){
-        int width = getWidth();
-        int height = getHeight();
-
-        float x = width * 0.10f;
-        float y = height * 0.90f;
-
-        botProgressCenter.x = (int)x;
-        botProgressCenter.y = (int)y;
-    }
+//    private void initBotProgressPoint(){
+//        int width = getWidth();
+//        int height = getHeight();
+//
+//        float x = width * 0.10f;
+//        float y = height * 0.90f;
+//
+//        botProgressCenter.x = (int)x;
+//        botProgressCenter.y = (int)y;
+//    }
 
 
 
@@ -623,10 +623,12 @@ public class GameBoard extends View {
     }
 
     private final Handler mHandler = new Handler(Looper.getMainLooper());
-    private String botProgressPercentStr = "---";
+//    private String botProgressPercentStr = "---";
     private final ExecutorService service = Executors.newSingleThreadExecutor();
     private int prevTimeTaken = 200; // in seconds
     private void startPredicting(PredictionAlgo reqAlgo){ // will use algo without any check if not null
+        if(boardListener != null) boardListener.onProgressBarUpdate(true);
+
         service.execute(() -> {
             long startTime = System.currentTimeMillis();
 
@@ -652,7 +654,13 @@ public class GameBoard extends View {
             prevTimeTaken = (prevTimeTaken + (int)(dif/1000)) / 2; // average so that it decreases slowly
 
             System.out.println("Actual time taken: "+dif);
-            botProgressPercentStr = "Took: "+ dif +"ms";
+//            botProgressPercentStr = "Took: "+ dif +"ms";
+            mHandler.post(() ->{
+                if(boardListener != null) {
+                    boardListener.onProgressBarUpdate(false);
+                    boardListener.onProgressUpdate("Took: "+ dif +"ms");
+                }
+            });
 
             long delay = (dif > 1000) ? 0L : 500L;
 
@@ -678,8 +686,10 @@ public class GameBoard extends View {
                 .setAlphaBetaListener(new AlphaBetaListener() {
                     @Override
                     public void onProgress(int progress) {
-                        botProgressPercentStr = progress +"%";
-                        mHandler.post(() -> invalidate());
+//                        botProgressPercentStr = progress +"%";
+                        mHandler.post(() ->{
+                            if(boardListener != null) boardListener.onProgressUpdate(progress +"%");
+                        });
                     }
 
                     @Override
@@ -726,8 +736,10 @@ public class GameBoard extends View {
                 .setGeneticListener(new GeneticListener() {
                     @Override
                     public void onProgress(int progress) {
-                        botProgressPercentStr = progress +"%";
-                        mHandler.post(() -> invalidate());
+//                        botProgressPercentStr = progress +"%";
+                        mHandler.post(() ->{
+                            if(boardListener != null) boardListener.onProgressUpdate(progress +"%");
+                        });
                     }
 
                     @Override
@@ -772,6 +784,8 @@ public class GameBoard extends View {
         void onAlgoChanged();
         void onGameEnds(CellState.MyColor winner);
         void onSoundPlayRequest(SoundController.SoundType soundType);
+        void onProgressBarUpdate(boolean show);
+        void onProgressUpdate(String strProgress);
     }
 
 }
