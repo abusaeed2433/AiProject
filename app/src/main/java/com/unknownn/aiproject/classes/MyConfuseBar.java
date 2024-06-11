@@ -7,6 +7,8 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -49,11 +51,21 @@ public class MyConfuseBar extends View {
                     paintBrush
             );
         }
-        canvas.drawText(strProgress, getWidth()/2f, (0.6f + 0.21f)*getHeight(), textBrush);
+        canvas.drawText(strProgress, getWidth()/2f, (0.6f + 0.25f)*getHeight(), textBrush);
+    }
+
+    private final Rect rect = new Rect();
+    private int maxWidth = 0;
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        textBrush.getTextBounds(strProgress,0,strProgress.length(), rect);
+        maxWidth = Math.max(rect.width() + 16,maxWidth);
+        setMeasuredDimension( maxWidth, rect.height()+16+41);
     }
 
     public void setStrProgress(String strProgress){
         this.strProgress = strProgress;
+        requestLayout();
         invalidate();
     }
 
