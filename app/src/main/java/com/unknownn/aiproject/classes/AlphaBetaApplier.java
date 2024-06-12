@@ -117,7 +117,6 @@ public class AlphaBetaApplier {
         if(stoppedByTLE) cellToPlace.set(null);
         alphaBetaListener.onFinished(cellToPlace.get());
         if(timerTracker != null) timerTracker.cancel();
-        //services.shutdownNow(); // todo may arise issue. check if any
     }
 
     private int applyAlphaBeta(CellState.MyColor[][] field, int depth, final boolean isMax, int alpha, int beta){
@@ -213,12 +212,13 @@ public class AlphaBetaApplier {
 
         int emptyPercent = (100 * emptyCount) / N_N;
 
-        if(emptyPercent > 70) return emptyCount/4; // early
+        if(emptyPercent > 70) return emptyCount/6; // early
 
         if(emptyPercent > 50) return emptyCount/4; // medium
 
-        if(emptyPercent > 30) return emptyCount; // high
-        return N_N; // critical
+        if(emptyPercent > 30) return emptyCount/2; // high
+
+        return emptyCount; // critical
     }
 
 

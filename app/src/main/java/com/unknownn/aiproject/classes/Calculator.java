@@ -1,5 +1,9 @@
 package com.unknownn.aiproject.classes;
 
+import static com.unknownn.aiproject.classes.CellState.MyColor.BLANK;
+import static com.unknownn.aiproject.classes.CellState.MyColor.BLUE;
+import static com.unknownn.aiproject.classes.CellState.MyColor.RED;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -9,11 +13,36 @@ import kotlin.Pair;
 
 public class Calculator {
     public static final int WIN = 100, LOSS = -100;
-    private static final int MULTIPLIER = 10;
     public static final int NO_WIN = 100;
+    private static final int PATH_LENGTH_WEIGHT = 10;
+    private static final int MOBILITY_WEIGHT = 5;
+
+
+    public static int getBoardScore(CellState.MyColor[][] board, int N){
+
+        int blueScore = 0;
+        int redScore = 0;
+
+        final Pair<Integer,Integer> pathLengths = getExpectedLongestPathBlueRed(board, N);
+
+        //System.out.println(pathLengths.getFirst()+" "+pathLengths.getSecond());
+
+        blueScore += pathLengths.getFirst()*PATH_LENGTH_WEIGHT;
+        redScore += pathLengths.getSecond()*PATH_LENGTH_WEIGHT;
+
+        final Pair<Integer,Integer> mobilities = calcMobilityBlueRed(board, N);
+        //System.out.println(mobilities.getFirst()+" "+mobilities.getSecond());
+
+        blueScore += mobilities.getFirst() * MOBILITY_WEIGHT;
+        redScore += mobilities.getSecond() * MOBILITY_WEIGHT;
+
+        //System.out.println(blueScore+" "+redScore);
+
+        return blueScore - redScore;
+    }
 
     public static CellState.MyColor getGameWinner(CellState.MyColor[][] field, int N){
-        final Pair<Integer,Integer> scores = calcBoardScore(field, N, true);
+        final Pair<Integer,Integer> scores = getBoardScoreOld(field, N, true);
 
         if(scores.getFirst() == N){ // Red won
             return CellState.MyColor.RED;
@@ -25,12 +54,110 @@ public class Calculator {
         return null;
     }
 
-    public static int getBoardScore(CellState.MyColor[][] field, int N){
-        final Pair<Integer,Integer> scores = Calculator.calcBoardScore(field, N,false);
-        return scores.getFirst() * MULTIPLIER - scores.getSecond() * MULTIPLIER;
+    private static int spreadThisPath(CellState.MyColor[][] board, int x, int y, boolean[][] visited, int N){
+        int left = x, top = y;
+        int right = x, bottom = y;
+
+        final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
+
+        final Queue<Pair<Integer,Integer>> queue = new LinkedList<>();
+        queue.add(new Pair<>(x,y));
+        visited[x][y] = true;
+
+        while (!queue.isEmpty()){
+            final Pair<Integer,Integer> pair = queue.poll();
+
+            assert pair != null;
+            final int oldX = pair.getFirst();
+            final int oldY = pair.getSecond();
+
+            for(int[] off : offsets){
+                final int newX = oldX + off[0];
+                final int newY = oldY + off[1];
+
+                if(newX < 0 || newX >= N || newY < 0 || newY >= N) continue;
+                if(visited[newX][newY]) continue;
+                if(board[newX][newY] != board[x][y]) continue;
+
+                visited[newX][newY] = true;
+
+                left = Math.min(left, newY); // x is height. It's ok
+                right = Math.max(right, newY);
+
+                top = Math.min(top, newX); // y is width and it's fine
+                bottom = Math.max(bottom, newX);
+
+                queue.add(new Pair<>(newX,newY));
+            }
+        }
+
+        if(board[x][y] == BLUE){ // vertical
+            return bottom - top +1;
+        }
+        return right - left +1; // for Red
     }
 
-    private static Pair<Integer,Integer> calcBoardScore(CellState.MyColor[][] field, int N, boolean noOptimization){
+    private static Pair<Integer,Integer> getExpectedLongestPathBlueRed(CellState.MyColor[][] board, int N){
+        final boolean[][] visited = new boolean[N][N];
+
+        int horizDisplacement = 0;
+        int vertDisplacement = 0;
+
+        for(int x=0; x<N; x++){
+            for(int y=0; y<N; y++){
+                if(board[x][y] == BLANK || visited[x][y]) continue;
+
+                int length = spreadThisPath(board, x,y,visited,N);
+
+                if(board[x][y] == BLUE){ // bot -> top to bottom path
+                    vertDisplacement = Math.max(vertDisplacement, length);
+                }
+                else{ // RED
+                    horizDisplacement = Math.max(horizDisplacement, length);
+                }
+
+            }
+        }
+
+        return new Pair<>(vertDisplacement, horizDisplacement); // BLUE, RED
+    }
+
+    private static Pair<Integer,Integer> calcMobilityBlueRed(CellState.MyColor[][] board, int N){
+
+        int blueMobility = 0;
+        int redMobility = 0;
+
+        for(int x=0; x<N; x++){
+            for(int y=0; y<N; y++){
+                if(board[x][y] != BLANK) continue;
+
+                final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
+
+                int blue = 0, red = 0;
+                for(int[] off : offsets){
+                    final int newX = x + off[0];
+                    final int newY = y + off[1];
+
+                    if(newX < 0 || newX >= N || newY < 0 || newY >= N) continue;
+
+                    if(board[newX][newY] == RED) red = 1;
+                    else if(board[newX][newY] == BLUE) blue = 1;
+
+                    if(red + blue == 2) break;
+                }
+
+                blueMobility += blue;
+                redMobility += red;
+            }
+        }
+
+        // the less, the better
+        final int max = Math.max(blueMobility, redMobility);
+        return new Pair<>(max - blueMobility, max - redMobility); // the more, the better since subtracted
+    }
+
+
+    private static Pair<Integer,Integer> getBoardScoreOld(CellState.MyColor[][] field, int N, boolean noOptimization){
         // left to right for Red
         int redNegScore = -NO_WIN;
         int redPosScore = NO_WIN;
@@ -87,7 +214,7 @@ public class Calculator {
      */
 
     public static int connectedToEndBy(CellState.MyColor[][] field, int N, int x, int y, boolean horizontal){
-        if(field[x][y] == CellState.MyColor.BLANK) return 0;
+        if(field[x][y] == BLANK) return 0;
 
         final Queue<Pair<Integer,Integer>> queue = new LinkedList<>();
 
