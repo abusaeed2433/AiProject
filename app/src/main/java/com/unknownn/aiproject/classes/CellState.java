@@ -6,7 +6,7 @@ import android.graphics.Point;
 
 public class CellState extends Cell{
     final Hexagon hexagon;
-    public int score = 0;
+    public String score = "";
 
     public CellState(int x, int y, Hexagon hexagon) {
         super(x,y, MyColor.BLANK);
@@ -15,7 +15,7 @@ public class CellState extends Cell{
 
     public void reset(){
         this.myColor = MyColor.BLANK;
-        score = 0;
+        score = "";
     }
 
 
@@ -46,6 +46,10 @@ public class CellState extends Cell{
     public Path getFillablePath(){
         return hexagon.getFillablePath();
     }
+    public float getLeftVertLength(){
+        return hexagon.getLeftVertLength();
+    }
+
 
     public enum MyColor {
         RED(1), BLUE(2), BLANK(0);

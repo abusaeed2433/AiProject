@@ -1,12 +1,16 @@
 package com.unknownn.aiproject.classes;
 
 import static com.unknownn.aiproject.classes.Calculator.LOSS;
+import static com.unknownn.aiproject.classes.Calculator.NO_WIN;
 import static com.unknownn.aiproject.classes.Calculator.WIN;
+import static com.unknownn.aiproject.classes.Calculator.getBoardScore;
 
 import com.unknownn.aiproject.listener.AlphaBetaListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,6 +21,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import kotlin.Pair;
 
 public class AlphaBetaApplier {
+
+    private static final long TIME_THRESHOLD = 112000L; // todo remove this later. 112s
 
     private int N;
     private int N_N;
@@ -31,6 +37,8 @@ public class AlphaBetaApplier {
         if(instance == null) {
             instance = new AlphaBetaApplier();
         }
+        instance.botProgressInt.set(0);
+        instance.stoppedByTLE = false;
         return instance;
     }
 
@@ -41,6 +49,33 @@ public class AlphaBetaApplier {
         return this;
     }
 
+    private boolean stoppedByTLE = false;
+    private Timer timerTracker = null;
+    private void trackTimeTaken(){
+        final long startTime = System.currentTimeMillis();
+        final int[] percent = new int[]{botProgressInt.get()};
+
+        timerTracker = new Timer();
+        timerTracker.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                final int curPercent = botProgressInt.get();
+                if( curPercent != percent[0]){ // progress running. Don't stop
+                    percent[0] = curPercent;
+                    return;
+                }
+
+                final long curTime = System.currentTimeMillis();
+                if(curTime - startTime > TIME_THRESHOLD){ // enough. Stop now
+                    timerTracker.cancel();
+                    timerTracker = null;
+                    stoppedByTLE = true;
+                    alphaBetaListener.onError("Taking too much time. Switching to Genetic", true);
+                }
+            }
+        },4000,3000);
+    }
+
     private final AtomicInteger botProgressInt = new AtomicInteger(Integer.MIN_VALUE);
     public void predict(final CellState.MyColor[][] fieldItOnly, int N){
         this.N = N;
@@ -49,6 +84,8 @@ public class AlphaBetaApplier {
         if(services == null){
             services = Executors.newFixedThreadPool(N*N);
         }
+
+        trackTimeTaken();
 
         AtomicInteger bestVal = new AtomicInteger(Integer.MIN_VALUE);
         AtomicReference<Pair<Integer,Integer>> cellToPlace = new AtomicReference<>(null);
@@ -77,17 +114,21 @@ public class AlphaBetaApplier {
             }catch (InterruptedException | ExecutionException ignored){}
         }
 
+        if(stoppedByTLE) cellToPlace.set(null);
         alphaBetaListener.onFinished(cellToPlace.get());
+        if(timerTracker != null) timerTracker.cancel();
     }
 
     private int applyAlphaBeta(CellState.MyColor[][] field, int depth, final boolean isMax, int alpha, int beta){
-        int score = evaluate(field);
+        if(stoppedByTLE) return 0;
 
-        if( score == WIN || score == LOSS ) {
-            return score; // someone wins
+        if( depth >= DEPTH_LIMIT ) {
+            return Calculator.getBoardScore(field,N);
         }
 
-        if( depth >= DEPTH_LIMIT ) return 0;
+        final CellState.MyColor winner = Calculator.getGameWinner(field,N);
+        if(winner == CellState.MyColor.BLUE) return WIN;
+        if(winner == CellState.MyColor.RED) return LOSS;
 
         int best = isMax ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
@@ -124,7 +165,7 @@ public class AlphaBetaApplier {
             AtomicInteger bestVal, AtomicReference<Pair<Integer,Integer>> cellToPlace){
 
         return services.submit(()->{
-            System.out.println("Depth limit: "+DEPTH_LIMIT);
+//            System.out.println("Depth limit: "+DEPTH_LIMIT);
 
             final CellState.MyColor[][] field = new CellState.MyColor[N][N];
             for(int i=0; i<N; i++){
@@ -135,7 +176,9 @@ public class AlphaBetaApplier {
             int moveVal = applyAlphaBeta(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
             field[x][y] = CellState.MyColor.BLANK;
 
-            System.out.println(moveVal);
+            if(stoppedByTLE) return;
+
+//            System.out.println(moveVal);
 
             if (moveVal > bestVal.get()) {
                 cellToPlace.set( new Pair<>(x,y) );
@@ -169,21 +212,14 @@ public class AlphaBetaApplier {
 
         int emptyPercent = (100 * emptyCount) / N_N;
 
-        if(emptyPercent > 70) return N; // early
+        if(emptyPercent > 70) return emptyCount/6; // early
 
-        if(emptyPercent > 50) return N+3; // medium
+        if(emptyPercent > 50) return emptyCount/4; // medium
 
-        return N_N; // critical
+        if(emptyPercent > 30) return emptyCount/2; // high
+
+        return emptyCount; // critical
     }
 
-    private int evaluate(CellState.MyColor[][] field){
-        final CellState.MyColor winner = Calculator.getGameWinner(field,N);
-
-        if( winner == CellState.MyColor.BLUE ) return WIN;
-
-        if( winner == CellState.MyColor.RED ) return LOSS;
-
-        return 0;
-    }
 
 }

@@ -11,12 +11,14 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.unknownn.aiproject.classes.CellState;
 import com.unknownn.aiproject.classes.GameBoard;
 import com.unknownn.aiproject.classes.Helper;
+import com.unknownn.aiproject.classes.SoundController;
 import com.unknownn.aiproject.databinding.ActivityMainBinding;
 import com.unknownn.aiproject.enums.PredictionAlgo;
 
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding = null;
+    private SoundController soundController = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,10 +41,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setClickListener(){
-        binding.tvAlgoType.setOnClickListener( v -> binding.gameBoard.swapPredictionAlgo(false));
+//        binding.tvAlgoType.setOnClickListener( v -> binding.gameBoard.swapPredictionAlgo(false));
     }
 
     private void setupBoard(){
+        soundController = SoundController.getInstance(this);
+
         binding.gameBoard.setBoardListener(new GameBoard.BoardListener() {
             @Override
             public void onMessageToShow(String message) {
@@ -52,7 +56,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAlgoChanged() {
                 Helper.showSafeToast(MainActivity.this,"Prediction algo is changed");
-
 
                 if(binding.gameBoard.getPredictionAlgo() == PredictionAlgo.ALPHA_BETA_PRUNING){
                     binding.tvAlgoType.setText(getString(R.string.alpha_beta));
@@ -73,6 +76,26 @@ public class MainActivity extends AppCompatActivity {
                         .setNegativeButton("Exit", (dialogInterface, i) -> MainActivity.this.finishAffinity())
                         .setCancelable(false)
                         .show();
+            }
+
+            @Override
+            public void onSoundPlayRequest(SoundController.SoundType soundType) {
+                soundController.playSound(soundType);
+            }
+
+            @Override
+            public void onProgressBarUpdate(boolean show) {
+                if(show){
+                    binding.myConfuseBar.startRotating();
+                }
+                else{
+                    binding.myConfuseBar.stopRotating();
+                }
+            }
+
+            @Override
+            public void onProgressUpdate(String strProgress) {
+                binding.myConfuseBar.setStrProgress(strProgress);
             }
         });
     }
