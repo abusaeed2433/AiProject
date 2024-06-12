@@ -1,9 +1,7 @@
 package com.unknownn.aiproject.classes;
 
 import static com.unknownn.aiproject.classes.Calculator.LOSS;
-import static com.unknownn.aiproject.classes.Calculator.NO_WIN;
 import static com.unknownn.aiproject.classes.Calculator.WIN;
-import static com.unknownn.aiproject.classes.Calculator.getBoardScore;
 
 import com.unknownn.aiproject.listener.AlphaBetaListener;
 
@@ -22,7 +20,7 @@ import kotlin.Pair;
 
 public class AlphaBetaApplier {
 
-    private static final long TIME_THRESHOLD = 112000L; // todo remove this later. 112s
+    private static final long TIME_THRESHOLD = 20_000L; // 20s
 
     private int N;
     private int N_N;

@@ -638,7 +638,7 @@ public class GameBoard extends View {
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 //    private String botProgressPercentStr = "---";
     private final ExecutorService service = Executors.newSingleThreadExecutor();
-    private int prevTimeTaken = 200; // in seconds
+    private int prevTimeTaken = 30; // in seconds
     private void startPredicting(PredictionAlgo reqAlgo){ // will use algo without any check if not null
         if(boardListener != null) boardListener.onProgressBarUpdate(true);
 
