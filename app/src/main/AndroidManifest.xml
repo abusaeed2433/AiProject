@@ -12,17 +12,27 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AiProject"
         tools:targetApi="31">
-
         <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:screenOrientation="landscape"
-            tools:ignore="DiscouragedApi">
+            android:name=".listener.SplashScreen"
+            android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+        </activity>
+
+
+
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            tools:ignore="DiscouragedApi">
+
         </activity>
     </application>
 
