@@ -1,8 +1,5 @@
 package com.unknownn.aiproject.classes;
 
-import static com.unknownn.aiproject.classes.Calculator.LOSS;
-import static com.unknownn.aiproject.classes.Calculator.WIN;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -222,7 +219,7 @@ public class GeneticApplier {
         final CellState.MyColor[][] copiedBoard = new CellState.MyColor[N][N];
 
         for(int x=0; x<N; x++){
-            System.arraycopy(board[x], 0, copiedBoard[x], 0, N);
+            System.arraycopy(curBoard[x], 0, copiedBoard[x], 0, N);
         }
 
         for(int i=solution.size()-1; i>=0; i--){
@@ -241,7 +238,7 @@ public class GeneticApplier {
     }
 
     private List<Cell> prevBestSolution = null;
-    public void predict(int N, CellState.MyColor[][] board){
+    public void predict(int N, CellState.MyColor[][] board, CellState lastClickedCell){
         this.N = N;
         this.board = board;
 

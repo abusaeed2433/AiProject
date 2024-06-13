@@ -16,7 +16,7 @@ public class Calculator {
     public static final int NO_WIN = 100;
     private static final int PATH_LENGTH_WEIGHT = 10;
     private static final int MOBILITY_WEIGHT = 5;
-
+    private static final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
 
     public static int getBoardScore(CellState.MyColor[][] board, int N){
 
@@ -58,7 +58,7 @@ public class Calculator {
         int left = x, top = y;
         int right = x, bottom = y;
 
-        final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
+
 
         final Queue<Pair<Integer,Integer>> queue = new LinkedList<>();
         queue.add(new Pair<>(x,y));
@@ -161,9 +161,9 @@ public class Calculator {
         // left to right for Red
         int redNegScore = -NO_WIN;
         int redPosScore = NO_WIN;
-        for(int y=0; y<N; y++){
-            if( field[0][y] != CellState.MyColor.RED ) continue;
-            final int score = connectedToEndBy(field,N,0,y, true);
+        for(int x=0; x<N; x++){
+            if( field[x][0] != CellState.MyColor.RED ) continue;
+            final int score = connectedToEndBy(field,N,x,0, true);
 
             if(score < 0){ // need |score| cells move to win
                 redNegScore = Math.max(redNegScore, score);
@@ -181,10 +181,10 @@ public class Calculator {
         // top to bottom for Blue
         int blueNegScore = -NO_WIN;
         int bluePosScore = NO_WIN;
-        for(int x=0; x<N; x++){
-            if( field[x][0] != CellState.MyColor.BLUE ) continue;
+        for(int y=0; y<N; y++){
+            if( field[y][0] != CellState.MyColor.BLUE ) continue;
 
-            final int score = connectedToEndBy(field, N, x, 0, false);
+            final int score = connectedToEndBy(field, N, 0, y, false);
             if(score < 0){ // need |score| cells move to win
                 blueNegScore = Math.max(blueNegScore, score);
             }
@@ -242,7 +242,7 @@ public class Calculator {
 
                     parentMap.put( pair.getFirst() * N + pair.getSecond(), row*N+col );
 
-                    if( (horizontal && (row == N-1)) || (!horizontal && col == N-1) ) { // someone wins
+                    if( (horizontal && (col == N-1)) || (!horizontal && row == N-1) ) { // someone wins
                         int pathLength = 0;
 
                         int r = row, c = col;
