@@ -20,7 +20,7 @@ import kotlin.Pair;
 
 public class AlphaBetaApplier {
 
-    private static final long TIME_THRESHOLD = 20_000L; // 20s
+    private static final long TIME_THRESHOLD = 1_20_000L; // 20s
 
     private int N;
     private int N_N;
@@ -87,9 +87,9 @@ public class AlphaBetaApplier {
 
         trackTimeTaken();
 
-        AtomicInteger bestVal = new AtomicInteger(Integer.MIN_VALUE);
-        AtomicInteger positionScore = new AtomicInteger(Integer.MIN_VALUE);
-        AtomicReference<Pair<Integer,Integer>> cellToPlace = new AtomicReference<>(null);
+        final AtomicInteger bestVal = new AtomicInteger(Integer.MIN_VALUE);
+        final AtomicInteger positionScore = new AtomicInteger(Integer.MIN_VALUE);
+        final AtomicReference<Pair<Integer,Integer>> cellToPlace = new AtomicReference<>(null);
 
         DEPTH_LIMIT = predictDepthLimit(fieldItOnly);
 

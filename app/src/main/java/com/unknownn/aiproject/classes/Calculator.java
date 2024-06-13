@@ -6,6 +6,7 @@ import static com.unknownn.aiproject.classes.CellState.MyColor.RED;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
@@ -16,6 +17,7 @@ public class Calculator {
     public static final int NO_WIN = 100;
     private static final int PATH_LENGTH_WEIGHT = 10;
     private static final int MOBILITY_WEIGHT = 5;
+    private static final int FREE_WEIGHT = 8;
     private static final int[][] offsets = { {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1},{0, 1} };
 
     public static int getBoardScore(CellState.MyColor[][] board, int N){
@@ -23,23 +25,25 @@ public class Calculator {
         int blueScore = 0;
         int redScore = 0;
 
-        final Pair<Integer,Integer> pathLengths = getExpectedLongestPathBlueRed(board, N);
+        final MyPair<PathScore,PathScore> pathScores = getExpectedLongestPathBlueRed(board, N);
 
-        //System.out.println(pathLengths.getFirst()+" "+pathLengths.getSecond());
-
-        blueScore += pathLengths.getFirst()*PATH_LENGTH_WEIGHT;
-        redScore += pathLengths.getSecond()*PATH_LENGTH_WEIGHT;
+        blueScore += pathScores.blue.length*PATH_LENGTH_WEIGHT;
+        redScore += pathScores.red.length*PATH_LENGTH_WEIGHT;
 
         final Pair<Integer,Integer> mobilities = calcMobilityBlueRed(board, N);
-        //System.out.println(mobilities.getFirst()+" "+mobilities.getSecond());
-
         blueScore += mobilities.getFirst() * MOBILITY_WEIGHT;
         redScore += mobilities.getSecond() * MOBILITY_WEIGHT;
 
-        //System.out.println(blueScore+" "+redScore);
+        // wrong value
+        final MyPair<Integer,Integer> freeCount = calcFreeBlueRed(board, N, pathScores.blue, pathScores.red);
+        int freeBlueScore = freeCount.blue * FREE_WEIGHT;
+        int freeRedScore = freeCount.red * FREE_WEIGHT;
 
+        //blueScore += freeCount.blue * FREE_WEIGHT;
+        //redScore += freeCount.red * FREE_WEIGHT;
         return blueScore - redScore;
     }
+
 
     public static CellState.MyColor getGameWinner(CellState.MyColor[][] field, int N){
         final Pair<Integer,Integer> scores = getBoardScoreOld(field, N, true);
@@ -54,11 +58,9 @@ public class Calculator {
         return null;
     }
 
-    private static int spreadThisPath(CellState.MyColor[][] board, int x, int y, boolean[][] visited, int N){
-        int left = x, top = y;
-        int right = x, bottom = y;
-
-
+    private static PathScore spreadThisPath(CellState.MyColor[][] board, int x, int y, boolean[][] visited, int N){
+        final PathScore pathScore = new PathScore(board[x][y]);
+        pathScore.reCalc(x,y);
 
         final Queue<Pair<Integer,Integer>> queue = new LinkedList<>();
         queue.add(new Pair<>(x,y));
@@ -81,45 +83,31 @@ public class Calculator {
 
                 visited[newX][newY] = true;
 
-                left = Math.min(left, newY); // x is height. It's ok
-                right = Math.max(right, newY);
-
-                top = Math.min(top, newX); // y is width and it's fine
-                bottom = Math.max(bottom, newX);
-
+                pathScore.reCalc(newX, newY); // update automatically based on color
                 queue.add(new Pair<>(newX,newY));
             }
         }
 
-        if(board[x][y] == BLUE){ // vertical
-            return bottom - top +1;
-        }
-        return right - left +1; // for Red
+        return pathScore;
     }
 
-    private static Pair<Integer,Integer> getExpectedLongestPathBlueRed(CellState.MyColor[][] board, int N){
+    private static MyPair<PathScore,PathScore> getExpectedLongestPathBlueRed(CellState.MyColor[][] board, int N){
         final boolean[][] visited = new boolean[N][N];
 
-        int horizDisplacement = 0;
-        int vertDisplacement = 0;
+        final PathScore bluePathScore = new PathScore(BLUE);
+        final PathScore redPathScore = new PathScore(RED);
 
         for(int x=0; x<N; x++){
             for(int y=0; y<N; y++){
                 if(board[x][y] == BLANK || visited[x][y]) continue;
 
-                int length = spreadThisPath(board, x,y,visited,N);
-
-                if(board[x][y] == BLUE){ // bot -> top to bottom path
-                    vertDisplacement = Math.max(vertDisplacement, length);
-                }
-                else{ // RED
-                    horizDisplacement = Math.max(horizDisplacement, length);
-                }
-
+                final PathScore pathScore = spreadThisPath(board, x,y,visited,N);
+                bluePathScore.update(pathScore);
+                redPathScore.update(pathScore);
             }
         }
 
-        return new Pair<>(vertDisplacement, horizDisplacement); // BLUE, RED
+        return new MyPair<>(bluePathScore, redPathScore); // BLUE, RED
     }
 
     private static Pair<Integer,Integer> calcMobilityBlueRed(CellState.MyColor[][] board, int N){
@@ -153,9 +141,72 @@ public class Calculator {
 
         // the less, the better
         final int max = Math.max(blueMobility, redMobility);
-        return new Pair<>(max - blueMobility, max - redMobility); // the more, the better since subtracted
+        return new Pair<>(blueMobility, redMobility); // the more, the better since subtracted
     }
 
+    private static MyPair<Integer,Integer> calcFreeBlueRed(CellState.MyColor[][] board, int N, PathScore bluePathScore, PathScore redPathScore) {
+        final int redLeftFreeCell = countFreeCellAtThese( board, N,
+                new int[][]{ {-1, 0}, {1, -1}, {0, -1} },
+                new int[]{2,2,1},
+                redPathScore.getPointsAtStart(),
+                Direction.LEFT
+        );
+
+        final int redRightFreeCell = countFreeCellAtThese(board, N,
+                new int[][]{ {0,1}, {-1,1}, {1,0} },
+                new int[]{2,2,1},
+                redPathScore.getPointsAtEnd(),
+                Direction.RIGHT
+        );
+
+        final int blueTopFreeCell = countFreeCellAtThese(board, N,
+                new int[][]{ {-1,0}, {-1,1} },
+                new int[]{2,2},
+                bluePathScore.getPointsAtStart(),
+                Direction.TOP
+        );
+
+        final int blueBottomFreeCell = countFreeCellAtThese(board, N,
+                new int[][]{ {1,0}, {1,1} },
+                new int[]{2,2},
+                bluePathScore.getPointsAtEnd(),
+                Direction.BOTTOM
+        );
+
+        final int blueFreeCell = blueTopFreeCell + blueBottomFreeCell;
+        final int redFreeCell = redLeftFreeCell + redRightFreeCell;
+        return new MyPair<>(blueFreeCell, redFreeCell);
+    }
+
+    private static int countFreeCellAtThese(CellState.MyColor[][] board, final int N,
+                                            final int[][] offsets, final int[] weights,
+                                            final List<PathScore.Point> points, Direction direction){
+
+        final boolean[][] visited = new boolean[N][N];
+        int count = 0;
+        for (PathScore.Point pt : points) {
+
+            if( (direction == Direction.LEFT && pt.y == 0) || (direction == Direction.RIGHT && pt.y == N-1) ||
+                    (direction == Direction.TOP && pt.x == 0) || (direction == Direction.BOTTOM && pt.x == N-1) ) {
+                return points.size() * 2; // no need to check
+            }
+
+            for(int i=0; i<offsets.length; i++){
+                final int[] off = offsets[i];
+
+                final int newX = pt.x + off[0];
+                final int newY = pt.y + off[1];
+
+                if(newX < 0 || newX >= N || newY < 0 || newY >= N) continue;
+                if(visited[newX][newY]) continue;
+
+                visited[newX][newY] = true;
+
+                if(board[newX][newY] == CellState.MyColor.BLANK) count += weights[i];
+            }
+        }
+        return count;
+    }
 
     private static Pair<Integer,Integer> getBoardScoreOld(CellState.MyColor[][] field, int N, boolean noOptimization){
         // left to right for Red
@@ -266,5 +317,7 @@ public class Calculator {
         if(score < N*N) return score;
         return -N; // current now, assuming N cells away from winning. |-N| will be lower
     }
+
+    private enum Direction{ LEFT, RIGHT, TOP, BOTTOM }
 
 }
