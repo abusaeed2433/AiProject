@@ -75,14 +75,14 @@ public class AlphaBetaApplier {
     }
 
     private final AtomicInteger botProgressInt = new AtomicInteger(Integer.MIN_VALUE);
-    private CellState lastClickedCell = null;
+    private volatile CellState lastClickedCell = null;
     public void predict(final CellState.MyColor[][] fieldItOnly, int N, CellState lastClickedCell){
         this.N = N;
         this.N_N = N*N;
         this.lastClickedCell = lastClickedCell;
 
         if(services == null){
-            services = Executors.newFixedThreadPool(N*N);
+            services = Executors.newFixedThreadPool(N_N);
         }
 
         trackTimeTaken();
@@ -183,9 +183,8 @@ public class AlphaBetaApplier {
         return 0;
     }
 
-    private Future<?> submitToThread(
-            final CellState.MyColor[][] fieldItOnly, final int x, final int y,
-            AtomicInteger bestVal, AtomicInteger positionScore, AtomicReference<Pair<Integer,Integer>> cellToPlace){
+    private Future<?> submitToThread(final CellState.MyColor[][] fieldItOnly, final int x, final int y,
+            final AtomicInteger bestVal, final AtomicInteger positionScore, AtomicReference<Pair<Integer,Integer>> cellToPlace){
 
         return services.submit(()->{
 //            System.out.println("Depth limit: "+DEPTH_LIMIT);

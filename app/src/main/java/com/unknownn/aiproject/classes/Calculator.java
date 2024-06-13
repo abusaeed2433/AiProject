@@ -182,7 +182,7 @@ public class Calculator {
         int blueNegScore = -NO_WIN;
         int bluePosScore = NO_WIN;
         for(int y=0; y<N; y++){
-            if( field[y][0] != CellState.MyColor.BLUE ) continue;
+            if( field[0][y] != CellState.MyColor.BLUE ) continue;
 
             final int score = connectedToEndBy(field, N, 0, y, false);
             if(score < 0){ // need |score| cells move to win

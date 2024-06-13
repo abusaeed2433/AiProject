@@ -267,7 +267,7 @@ public class GameBoard extends View {
         textBrush.setColor(Color.BLACK);
         textBrush.setTextAlign(Paint.Align.CENTER);
         textBrush.setStyle(Paint.Style.FILL);
-        textBrush.setTextSize(40f);
+        textBrush.setTextSize(20f);
     }
 
     private void initStates(){
@@ -735,7 +735,12 @@ public class GameBoard extends View {
 
                     @Override
                     public void onFinished(Pair<Integer, Integer> xy) {
-                        Pair<Integer,Integer> yx = new Pair<>(xy.getFirst(), xy.getSecond()); // must
+                        if(xy == null){
+                            futureResult.complete(null);
+                            return;
+                        }
+
+                        Pair<Integer,Integer> yx = new Pair<>(xy.getSecond(), xy.getFirst()); // must
 
                         posToPlace[0] = yx;
                         futureResult.complete(yx);
@@ -791,7 +796,11 @@ public class GameBoard extends View {
 
                     @Override
                     public void onFinished(Pair<Integer, Integer> xy) {
-                        Pair<Integer,Integer> yx = new Pair<>(xy.getFirst(), xy.getSecond()); // must
+                        if(xy == null){
+                            futureResult.complete(null);
+                            return;
+                        }
+                        Pair<Integer,Integer> yx = new Pair<>(xy.getSecond(), xy.getFirst()); // must
 
                         posToPlace[0] = yx;
                         futureResult.complete(yx);
