@@ -115,9 +115,9 @@ public class FuzzyApplier {
 
     private PredictionAlgo calcValue(double percent){
         // todo For testing only
-        return PredictionAlgo.ALPHA_BETA_PRUNING;
-//        if(percent < 50) return PredictionAlgo.ALPHA_BETA_PRUNING;
 //        return PredictionAlgo.GENETIC_ALGO;
+        if(percent < 50) return PredictionAlgo.ALPHA_BETA_PRUNING;
+        return PredictionAlgo.GENETIC_ALGO;
     }
 
     public PredictionAlgo predictAlgo(int N_N, int emptyCells, int prevTimeTaken){

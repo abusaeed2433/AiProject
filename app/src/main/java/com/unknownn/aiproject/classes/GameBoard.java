@@ -779,7 +779,7 @@ public class GameBoard extends View {
                             if(changeToAlphaBeta) {
                                 futureResult.complete(null);
                                 swapPredictionAlgo(true);
-                                startPredicting(null);
+                                startPredicting(PredictionAlgo.ALPHA_BETA_PRUNING);
                             }
                         });
                     }
