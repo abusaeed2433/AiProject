@@ -1,6 +1,7 @@
-package com.unknownn.aiproject.listener;
+package com.unknownn.aiproject;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 
@@ -9,9 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
-import com.unknownn.aiproject.MainActivity;
-import com.unknownn.aiproject.R;
 
 public class SplashScreen extends AppCompatActivity {
 
@@ -23,7 +21,7 @@ public class SplashScreen extends AppCompatActivity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                Intent intent = new Intent(SplashScreen.this, MainActivity.class);
+                Intent intent = new Intent(SplashScreen.this, HomeScreen.class);
                 startActivity(intent);
                 finish();
             }
@@ -36,4 +34,7 @@ public class SplashScreen extends AppCompatActivity {
             return insets;
         });
     }
+
+
+
 }

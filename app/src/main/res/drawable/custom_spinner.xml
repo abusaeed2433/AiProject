@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background shape with rounded corners -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/>
+            <corners android:radius="50dp"/>
+        </shape>
+    </item>
+    <!-- Bitmap image as an overlay -->
+    <item>
+        <bitmap
+            android:src="@drawable/hex_background"
+            android:gravity="center"
+            android:tileMode="disabled"/>
+    </item>
+</layer-list>
