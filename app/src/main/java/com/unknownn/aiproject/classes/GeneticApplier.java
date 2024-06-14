@@ -1,8 +1,5 @@
 package com.unknownn.aiproject.classes;
 
-import static com.unknownn.aiproject.classes.Calculator.LOSS;
-import static com.unknownn.aiproject.classes.Calculator.WIN;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -23,7 +20,7 @@ public class GeneticApplier {
     private final Random random = new Random();
     private static final int POPULATION_SIZE = 10;
     private static final int MUTATION_RATE = 5;
-    private static final int NO_OF_IT = 200;
+    private static final int NO_OF_IT = 250;
     private static final int TOURNAMENT_SIZE = 2;
     private static GeneticApplier instance = null;
 
@@ -222,7 +219,7 @@ public class GeneticApplier {
         final CellState.MyColor[][] copiedBoard = new CellState.MyColor[N][N];
 
         for(int x=0; x<N; x++){
-            System.arraycopy(board[x], 0, copiedBoard[x], 0, N);
+            System.arraycopy(curBoard[x], 0, copiedBoard[x], 0, N);
         }
 
         for(int i=solution.size()-1; i>=0; i--){
@@ -240,22 +237,40 @@ public class GeneticApplier {
         return winner == CellState.MyColor.BLUE;
     }
 
+    private Pair<Integer,Integer> chooseTheBestCellToPlace(List<Cell> solution){
+        for(Cell cell : solution){
+            if(cell.myColor == CellState.MyColor.BLUE){
+                solution.remove(cell);
+                return new Pair<>(cell.x, cell.y);
+            }
+        }
+        return null;
+    }
+
     private List<Cell> prevBestSolution = null;
-    public void predict(int N, CellState.MyColor[][] board){
+    private volatile CellState lastClickedCell = null;
+    public void predict(int N, CellState.MyColor[][] board, CellState lastClickedCell){
         this.N = N;
         this.board = board;
+        this.lastClickedCell = lastClickedCell;
 
         if( isPrevSolutionWinnable(prevBestSolution, board) ){
             geneticListener.onProgress(100);
             geneticListener.onDrawRequest(prevBestSolution);
 
-            for(Cell cell : prevBestSolution){
-                if(cell.myColor == CellState.MyColor.BLUE){ // try to choose the best
-                    geneticListener.onFinished(new Pair<>(cell.x, cell.y));
-                    prevBestSolution.remove(cell);
-                    return;
+
+            final Pair<Integer,Integer> toPlace = chooseTheBestCellToPlace(prevBestSolution);
+            if(toPlace == null){
+                if(geneticListener != null) {
+                    geneticListener.onError("Something went wrong",true);
                 }
+                return;
             }
+
+            if(geneticListener != null) {
+                geneticListener.onFinished(new Pair<>(toPlace.getFirst(), toPlace.getSecond()));
+            }
+
             return;
         }
 
@@ -298,14 +313,19 @@ public class GeneticApplier {
 
         prevBestSolution = globalBest;
         geneticListener.onDrawRequest(globalBest);
-        for(Cell cell : globalBest){
-            if(cell.myColor == CellState.MyColor.BLUE){
-                geneticListener.onFinished(new Pair<>(cell.x, cell.y));
-                prevBestSolution.remove(cell);
-                return;
+
+
+        final Pair<Integer,Integer> toPlace = chooseTheBestCellToPlace(globalBest);
+        if(toPlace == null){
+            if(geneticListener != null) {
+                geneticListener.onError("Something went wrong",true);
             }
+            return;
         }
 
+        if(geneticListener != null) {
+            geneticListener.onFinished(new Pair<>(toPlace.getFirst(), toPlace.getSecond()));
+        }
     }
 
 }

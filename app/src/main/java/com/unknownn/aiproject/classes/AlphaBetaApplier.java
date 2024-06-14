@@ -1,9 +1,7 @@
 package com.unknownn.aiproject.classes;
 
 import static com.unknownn.aiproject.classes.Calculator.LOSS;
-import static com.unknownn.aiproject.classes.Calculator.NO_WIN;
 import static com.unknownn.aiproject.classes.Calculator.WIN;
-import static com.unknownn.aiproject.classes.Calculator.getBoardScore;
 
 import com.unknownn.aiproject.listener.AlphaBetaListener;
 
@@ -22,7 +20,7 @@ import kotlin.Pair;
 
 public class AlphaBetaApplier {
 
-    private static final long TIME_THRESHOLD = 112000L; // todo remove this later. 112s
+    private static final long TIME_THRESHOLD = 1_20_000L; // 20s
 
     private int N;
     private int N_N;
@@ -77,18 +75,21 @@ public class AlphaBetaApplier {
     }
 
     private final AtomicInteger botProgressInt = new AtomicInteger(Integer.MIN_VALUE);
-    public void predict(final CellState.MyColor[][] fieldItOnly, int N){
+    private volatile CellState lastClickedCell = null;
+    public void predict(final CellState.MyColor[][] fieldItOnly, int N, CellState lastClickedCell){
         this.N = N;
         this.N_N = N*N;
+        this.lastClickedCell = lastClickedCell;
 
         if(services == null){
-            services = Executors.newFixedThreadPool(N*N);
+            services = Executors.newFixedThreadPool(N_N);
         }
 
         trackTimeTaken();
 
-        AtomicInteger bestVal = new AtomicInteger(Integer.MIN_VALUE);
-        AtomicReference<Pair<Integer,Integer>> cellToPlace = new AtomicReference<>(null);
+        final AtomicInteger bestVal = new AtomicInteger(Integer.MIN_VALUE);
+        final AtomicInteger positionScore = new AtomicInteger(Integer.MIN_VALUE);
+        final AtomicReference<Pair<Integer,Integer>> cellToPlace = new AtomicReference<>(null);
 
         DEPTH_LIMIT = predictDepthLimit(fieldItOnly);
 
@@ -103,7 +104,7 @@ public class AlphaBetaApplier {
                     continue;
                 }
 
-                final Future<?> future = submitToThread(fieldItOnly, x,y, bestVal, cellToPlace);
+                final Future<?> future = submitToThread(fieldItOnly, x,y, bestVal,positionScore, cellToPlace);
                 futures.add(future);
             }
         }
@@ -160,9 +161,30 @@ public class AlphaBetaApplier {
         return best;
     }
 
-    private Future<?> submitToThread(
-            final CellState.MyColor[][] fieldItOnly, final int x, final int y,
-            AtomicInteger bestVal, AtomicReference<Pair<Integer,Integer>> cellToPlace){
+    private int calcScoreRelativeToLastPlacedCell(int x, int y){
+
+        if(lastClickedCell == null) return 0;
+
+        final int lastX = lastClickedCell.x;
+        final int lastY = lastClickedCell.y;
+
+        if(lastY < N/2){ // clicked cell is on left side
+            final int[][] leftOffsets = {{-1, 0}, {0, -1},  {1, -1}};
+            for(int[] off : leftOffsets){
+                if(lastX + off[0] == x && lastY + off[1] == y) return 10;
+            }
+        }
+        else{
+            final int[][] rightOffsets = { {1, 0}, {-1, 1},{0, 1} };
+            for(int[] off : rightOffsets){
+                if(lastX + off[0] == x && lastY + off[1] == y) return 10;
+            }
+        }
+        return 0;
+    }
+
+    private Future<?> submitToThread(final CellState.MyColor[][] fieldItOnly, final int x, final int y,
+            final AtomicInteger bestVal, final AtomicInteger positionScore, AtomicReference<Pair<Integer,Integer>> cellToPlace){
 
         return services.submit(()->{
 //            System.out.println("Depth limit: "+DEPTH_LIMIT);
@@ -180,19 +202,16 @@ public class AlphaBetaApplier {
 
 //            System.out.println(moveVal);
 
+            int score = calcScoreRelativeToLastPlacedCell(x,y);
+
             if (moveVal > bestVal.get()) {
                 cellToPlace.set( new Pair<>(x,y) );
                 bestVal.set( moveVal );
+                positionScore.set(score);
             }
-            else if( moveVal == bestVal.get() && cellToPlace.get() != null ){
-                final Pair<Integer,Integer> prev = cellToPlace.get();
-
-                int prevVal = prev.getFirst() * N + prev.getSecond();
-                int curVal = x * N + y;
-
-                if( curVal < prevVal ){ // current one is earlier, so better?
-                    cellToPlace.set( new Pair<>(x,y) );
-                }
+            else if( moveVal == bestVal.get() && positionScore.get() < score ){ // current position is better
+                cellToPlace.set( new Pair<>(x,y) );
+                positionScore.set(score);
             }
 
             botProgressInt.incrementAndGet();

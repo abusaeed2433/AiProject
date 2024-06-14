@@ -16,10 +16,10 @@ public class FuzzyApplier {
 
     private NoOfEmptyCellR checkNoOfEmptyCell(double val, final int N){
         double leftOne, leftTwo, midOne, midTwo;
-        leftOne = 0.3 * N;
-        leftTwo = 0.4 * N;
-        midOne = 0.6 * N;
-        midTwo = 0.7 * N;
+        leftOne = 0.4 * N;
+        leftTwo = 0.6 * N;
+        midOne = 0.8 * N;
+        midTwo = 0.9 * N;
 
         if(val <= leftOne){
             return new NoOfEmptyCellR(1,0,0);
@@ -47,11 +47,10 @@ public class FuzzyApplier {
 
     private AlphaBetaTimeR checkAlphaBetaTime(double val){
         double leftOne, leftTwo, midOne, midTwo;
-        leftOne = 5;
-        leftTwo = 7;
-        midOne = 15;
-        midTwo = 20;
-
+        leftOne = 8;
+        leftTwo = 12;
+        midOne = 22;
+        midTwo = 28;
 
         if(val <= leftOne){
             return new AlphaBetaTimeR(1,0,0);

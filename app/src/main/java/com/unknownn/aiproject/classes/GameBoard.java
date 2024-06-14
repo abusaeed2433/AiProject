@@ -138,7 +138,7 @@ public class GameBoard extends View {
                 if(debugMode) {
                     Point pt = cell.getTextCenter();
                     canvas.drawText(
-                            ((i * N) + j) + (cell.score.isEmpty() ? cell.score : ": " + cell.score),
+                            (i +", "+ j) + (cell.score.isEmpty() ? cell.score : ": " + cell.score),
                             pt.x,
                             pt.y,
                             textBrush
@@ -186,12 +186,8 @@ public class GameBoard extends View {
         return false;
     }
 
+    private static CellState lastClickedCell = null;
     private void processClick(float x, float y){
-        if( !redTurn ) {
-            if(boardListener != null) boardListener.onMessageToShow("Wait for bot move");
-            return;
-        }
-
         CellState clickedCell = null;
 
         mainLoop:
@@ -206,11 +202,18 @@ public class GameBoard extends View {
 
         if(clickedCell == null) return;
 
+        if( !redTurn ) {
+            if(boardListener != null) boardListener.onMessageToShow("Wait for bot move");
+            return;
+        }
+
 
         if(!clickedCell.isBlank()){
 
             if(isTheFirstMove && !redTurn){
                 clickedCell.setMyColor( CellState.MyColor.BLUE );
+                lastClickedCell = clickedCell;
+
                 redTurn = !redTurn;
                 isTheFirstMove = false;
                 invalidate();
@@ -264,7 +267,7 @@ public class GameBoard extends View {
         textBrush.setColor(Color.BLACK);
         textBrush.setTextAlign(Paint.Align.CENTER);
         textBrush.setStyle(Paint.Style.FILL);
-        textBrush.setTextSize(40f);
+        textBrush.setTextSize(20f);
     }
 
     private void initStates(){
@@ -577,7 +580,7 @@ public class GameBoard extends View {
     }
 
     private void checkForGameOver(boolean isUserMove){
-        final CellState.MyColor[][] field = getField();
+        final CellState.MyColor[][] field = getCurrentBoard();
         final CellState.MyColor winner = Calculator.getGameWinner(field,N);
 
         if( winner == null) { // predict next move is bot`s turn
@@ -615,11 +618,11 @@ public class GameBoard extends View {
         return new Hexagon(leftTop, topMiddle, rightTop, rightBottom, bottomMiddle, leftBottom);
     }
 
-    private CellState.MyColor[][] getField(){
+    private CellState.MyColor[][] getCurrentBoard(){
         final CellState.MyColor[][] field = new CellState.MyColor[N][N];
         for(int x=0; x<N; x++){
             for(int y=0; y<N; y++){
-                field[x][y] = states[x][y].getMyColor();
+                field[x][y] = states[y][x].getMyColor(); // y,x at the second is correct
             }
         }
         return field;
@@ -627,9 +630,9 @@ public class GameBoard extends View {
 
     private int countEmptyCell(){
         int count = 0;
-        for(int i=0; i<N; i++){
-            for(int j=0; j<N; j++){
-                if(states[i][j].isBlank()) count++;
+        for(int x=0; x<N; x++){
+            for(int y=0; y<N; y++){
+                if(states[y][x].isBlank()) count++;
             }
         }
         return count;
@@ -638,7 +641,7 @@ public class GameBoard extends View {
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 //    private String botProgressPercentStr = "---";
     private final ExecutorService service = Executors.newSingleThreadExecutor();
-    private int prevTimeTaken = 200; // in seconds
+    private int prevTimeTaken = 30; // in seconds
     private void startPredicting(PredictionAlgo reqAlgo){ // will use algo without any check if not null
         if(boardListener != null) boardListener.onProgressBarUpdate(true);
 
@@ -701,7 +704,7 @@ public class GameBoard extends View {
         Pair<Integer, Integer>[] posToPlace = new Pair[1];
         posToPlace[0] = null;
 
-        final CellState.MyColor[][] currentBoard = getField();
+        final CellState.MyColor[][] currentBoard = getCurrentBoard();
         AlphaBetaApplier.getInstance()
                 .setAlphaBetaListener(new AlphaBetaListener() {
                     @Override
@@ -726,17 +729,24 @@ public class GameBoard extends View {
 
                     @Override
                     public void onCellValueUpdated(int x, int y, int moveVal) {
-                        states[x][y].score = moveVal+"";
+                        states[y][x].score = moveVal+""; // y,x correct
                         mHandler.post(() -> invalidate());
                     }
 
                     @Override
                     public void onFinished(Pair<Integer, Integer> xy) {
-                        posToPlace[0] = xy;
-                        futureResult.complete(xy);
+                        if(xy == null){
+                            futureResult.complete(null);
+                            return;
+                        }
+
+                        Pair<Integer,Integer> yx = new Pair<>(xy.getSecond(), xy.getFirst()); // must
+
+                        posToPlace[0] = yx;
+                        futureResult.complete(yx);
                     }
                 })
-                .predict(currentBoard,N);
+                .predict(currentBoard,N, lastClickedCell);
 
         try {
             futureResult.get();
@@ -751,7 +761,7 @@ public class GameBoard extends View {
         Pair<Integer, Integer>[] posToPlace = new Pair[1];
         posToPlace[0] = null;
 
-        final CellState.MyColor[][] currentBoard = getField();
+        final CellState.MyColor[][] currentBoard = getCurrentBoard();
         GeneticApplier.getInstance()
                 .setGeneticListener(new GeneticListener() {
                     @Override
@@ -769,7 +779,7 @@ public class GameBoard extends View {
                             if(changeToAlphaBeta) {
                                 futureResult.complete(null);
                                 swapPredictionAlgo(true);
-                                startPredicting(null);
+                                startPredicting(PredictionAlgo.ALPHA_BETA_PRUNING);
                             }
                         });
                     }
@@ -777,7 +787,7 @@ public class GameBoard extends View {
                     @Override
                     public void onDrawRequest(List<Cell> selectedBoard) {
                         for(Cell cell : selectedBoard){
-                            selectedBoardFromGenetic[cell.x][cell.y] = new Cell(-1,-1,cell.myColor);
+                            selectedBoardFromGenetic[cell.y][cell.x] = new Cell(-1,-1,cell.myColor);
                         }
                         mHandler.post(() ->
                                 invalidate()
@@ -786,11 +796,17 @@ public class GameBoard extends View {
 
                     @Override
                     public void onFinished(Pair<Integer, Integer> xy) {
-                        posToPlace[0] = xy;
-                        futureResult.complete(xy);
+                        if(xy == null){
+                            futureResult.complete(null);
+                            return;
+                        }
+                        Pair<Integer,Integer> yx = new Pair<>(xy.getSecond(), xy.getFirst()); // must
+
+                        posToPlace[0] = yx;
+                        futureResult.complete(yx);
                     }
                 })
-                .predict(N,currentBoard);
+                .predict(N,currentBoard, lastClickedCell);
 
         try {
             futureResult.get();
