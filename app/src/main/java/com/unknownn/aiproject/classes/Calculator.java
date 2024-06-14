@@ -34,13 +34,10 @@ public class Calculator {
         blueScore += mobilities.getFirst() * MOBILITY_WEIGHT;
         redScore += mobilities.getSecond() * MOBILITY_WEIGHT;
 
-        // wrong value
         final MyPair<Integer,Integer> freeCount = calcFreeBlueRed(board, N, pathScores.blue, pathScores.red);
-        int freeBlueScore = freeCount.blue * FREE_WEIGHT;
-        int freeRedScore = freeCount.red * FREE_WEIGHT;
+        blueScore += freeCount.blue * FREE_WEIGHT;
+        redScore += freeCount.red * FREE_WEIGHT;
 
-        //blueScore += freeCount.blue * FREE_WEIGHT;
-        //redScore += freeCount.red * FREE_WEIGHT;
         return blueScore - redScore;
     }
 
@@ -145,42 +142,44 @@ public class Calculator {
     }
 
     private static MyPair<Integer,Integer> calcFreeBlueRed(CellState.MyColor[][] board, int N, PathScore bluePathScore, PathScore redPathScore) {
-        final int redLeftFreeCell = countFreeCellAtThese( board, N,
-                new int[][]{ {-1, 0}, {1, -1}, {0, -1} },
-                new int[]{2,2,1},
-                redPathScore.getPointsAtStart(),
-                Direction.LEFT
-        );
-
-        final int redRightFreeCell = countFreeCellAtThese(board, N,
-                new int[][]{ {0,1}, {-1,1}, {1,0} },
-                new int[]{2,2,1},
-                redPathScore.getPointsAtEnd(),
-                Direction.RIGHT
-        );
 
         final int blueTopFreeCell = countFreeCellAtThese(board, N,
                 new int[][]{ {-1,0}, {-1,1} },
                 new int[]{2,2},
-                bluePathScore.getPointsAtStart(),
+                bluePathScore.getPointsAtStart(), bluePathScore.length,
                 Direction.TOP
         );
 
         final int blueBottomFreeCell = countFreeCellAtThese(board, N,
                 new int[][]{ {1,0}, {1,1} },
                 new int[]{2,2},
-                bluePathScore.getPointsAtEnd(),
+                bluePathScore.getPointsAtEnd(), bluePathScore.length,
                 Direction.BOTTOM
+        );
+
+        final int redLeftFreeCell = countFreeCellAtThese( board, N,
+                new int[][]{ {-1, 0}, {1, -1}, {0, -1} },
+                new int[]{2,2,1},
+                redPathScore.getPointsAtStart(), redPathScore.length,
+                Direction.LEFT
+        );
+
+        final int redRightFreeCell = countFreeCellAtThese(board, N,
+                new int[][]{ {0,1}, {-1,1}, {1,0} },
+                new int[]{2,2,1},
+                redPathScore.getPointsAtEnd(),redPathScore.length,
+                Direction.RIGHT
         );
 
         final int blueFreeCell = blueTopFreeCell + blueBottomFreeCell;
         final int redFreeCell = redLeftFreeCell + redRightFreeCell;
+        System.out.println(blueFreeCell+" , "+redFreeCell);
         return new MyPair<>(blueFreeCell, redFreeCell);
     }
 
     private static int countFreeCellAtThese(CellState.MyColor[][] board, final int N,
                                             final int[][] offsets, final int[] weights,
-                                            final List<PathScore.Point> points, Direction direction){
+                                            final List<PathScore.Point> points, int len, Direction direction){
 
         final boolean[][] visited = new boolean[N][N];
         int count = 0;
@@ -188,7 +187,7 @@ public class Calculator {
 
             if( (direction == Direction.LEFT && pt.y == 0) || (direction == Direction.RIGHT && pt.y == N-1) ||
                     (direction == Direction.TOP && pt.x == 0) || (direction == Direction.BOTTOM && pt.x == N-1) ) {
-                return points.size() * 2; // no need to check
+                return (N-1)*len;//points.size() * 2; // no need to check
             }
 
             for(int i=0; i<offsets.length; i++){
@@ -197,7 +196,10 @@ public class Calculator {
                 final int newX = pt.x + off[0];
                 final int newY = pt.y + off[1];
 
-                if(newX < 0 || newX >= N || newY < 0 || newY >= N) continue;
+                if(newX < 0 || newX >= N || newY < 0 || newY >= N) {
+                    count += weights[i]; // Giving weight even if cell is invalid
+                    continue;
+                }
                 if(visited[newX][newY]) continue;
 
                 visited[newX][newY] = true;
