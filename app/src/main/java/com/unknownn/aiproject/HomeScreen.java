@@ -16,13 +16,16 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import static com.unknownn.aiproject.HomeScreen.Difficulty.*;
 
 public class HomeScreen extends AppCompatActivity {
 
     ImageButton btn_play,btn_sound,btn_debug;
     Boolean isSoundOn = true;
 
-    @SuppressLint("MissingInflatedId")
+    private Difficulty diffLevel = EASY;
+    private final Difficulty[] difficulties = {EASY, MEDIUM, HARD};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,8 +58,7 @@ public class HomeScreen extends AppCompatActivity {
         difficultySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                String selectedDifficulty = parentView.getItemAtPosition(position).toString();
-                Toast.makeText(HomeScreen.this, "Selected: " + selectedDifficulty, Toast.LENGTH_SHORT).show();
+                diffLevel = difficulties[position];
             }
 
             @Override
@@ -69,8 +71,8 @@ public class HomeScreen extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(HomeScreen.this, MainActivity.class);
+                intent.putExtra("difficulty_mode",diffLevel.name());
                 startActivity(intent);
-
             }
         });
 
@@ -98,5 +100,14 @@ public class HomeScreen extends AppCompatActivity {
         });
 
 
+    }
+
+    enum Difficulty{
+        EASY(1), MEDIUM(2), HARD(3);
+
+        final int id;
+        Difficulty(int id) {
+            this.id = id;
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.unknownn.aiproject;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +15,8 @@ import com.unknownn.aiproject.classes.Helper;
 import com.unknownn.aiproject.classes.SoundController;
 import com.unknownn.aiproject.databinding.ActivityMainBinding;
 import com.unknownn.aiproject.enums.PredictionAlgo;
+
+import java.io.UTFDataFormatException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,7 +39,12 @@ public class MainActivity extends AppCompatActivity {
             return view.onApplyWindowInsets(windowInsets);
         });
 
-        setupBoard();
+        final Intent intent = getIntent();
+
+        final String strLevel = intent.getStringExtra("difficulty_mode");
+        HomeScreen.Difficulty difficulty = HomeScreen.Difficulty.valueOf(strLevel);
+
+        setupBoard(difficulty);
         setClickListener();
     }
 
@@ -44,8 +52,17 @@ public class MainActivity extends AppCompatActivity {
 //        binding.tvAlgoType.setOnClickListener( v -> binding.gameBoard.swapPredictionAlgo(false));
     }
 
-    private void setupBoard(){
+    private void setupBoard(HomeScreen.Difficulty difficulty){
         soundController = SoundController.getInstance(this);
+
+        switch (difficulty){
+            case EASY -> {
+                binding.gameBoard.fixPredictionAlgo(PredictionAlgo.GENETIC_ALGO); // use both GA
+                binding.tvAlgoType.setText(getString(R.string.genetic_algo));
+            }
+            case MEDIUM -> binding.gameBoard.fixPredictionAlgo(null); // use both AB, GA
+            case HARD -> binding.gameBoard.fixPredictionAlgo(PredictionAlgo.ALPHA_BETA_PRUNING); // use both AB
+        }
 
         binding.gameBoard.setBoardListener(new GameBoard.BoardListener() {
             @Override
@@ -54,8 +71,10 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onAlgoChanged() {
-                Helper.showSafeToast(MainActivity.this,"Prediction algo is changed");
+            public void onAlgoChanged(boolean showToast) {
+                if(showToast) {
+                    Helper.showSafeToast(MainActivity.this,"Prediction algo is changed");
+                }
 
                 if(binding.gameBoard.getPredictionAlgo() == PredictionAlgo.ALPHA_BETA_PRUNING){
                     binding.tvAlgoType.setText(getString(R.string.alpha_beta));

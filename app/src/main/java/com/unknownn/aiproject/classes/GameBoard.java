@@ -535,6 +535,12 @@ public class GameBoard extends View {
 //    }
 
 
+    private PredictionAlgo fixedPredictionAlgo = null;
+    public void fixPredictionAlgo(PredictionAlgo algo){
+        this.fixedPredictionAlgo = algo;
+        this.predictionAlgo = algo;
+    }
+
 
     public void restart(){
         redTurn = true;
@@ -554,16 +560,14 @@ public class GameBoard extends View {
         invalidate();
     }
 
-    private void setPredictionAlgo(PredictionAlgo algo){
-        if(this.predictionAlgo != algo){
-             mHandler.post(() -> {
-                 if(boardListener != null) boardListener.onAlgoChanged();
-             });
-        }
+    private void setPredictionAlgo(PredictionAlgo algo, boolean showToast){
+        mHandler.post(() -> {
+            if(boardListener != null) boardListener.onAlgoChanged(showToast);
+        });
         this.predictionAlgo = algo;
     }
 
-    public void swapPredictionAlgo(boolean requestedByBot){
+    public void swapPredictionAlgo(boolean requestedByBot, boolean showToast){
         if( !redTurn && !requestedByBot) {
             if(boardListener != null) boardListener.onMessageToShow("Be patient");
             return;
@@ -572,7 +576,7 @@ public class GameBoard extends View {
         predictionAlgo = (predictionAlgo == PredictionAlgo.ALPHA_BETA_PRUNING) ?
                 PredictionAlgo.GENETIC_ALGO : PredictionAlgo.ALPHA_BETA_PRUNING;
 
-        if(boardListener != null) boardListener.onAlgoChanged();
+        if(boardListener != null) boardListener.onAlgoChanged(showToast);
     }
 
     public PredictionAlgo getPredictionAlgo() {
@@ -661,7 +665,9 @@ public class GameBoard extends View {
                         .getInstance()
                         .predictAlgo(N_N, countEmptyCell(), prevTimeTaken);
             }
-            setPredictionAlgo(algo);
+
+            if(fixedPredictionAlgo != null) algo = fixedPredictionAlgo;
+            setPredictionAlgo(algo,false);
 
             Pair<Integer,Integer> xy = (predictionAlgo == PredictionAlgo.ALPHA_BETA_PRUNING )
                     ? predictByAlphaBeta() : predictByGeneticAlgo();
@@ -721,7 +727,7 @@ public class GameBoard extends View {
                             if(!changeToGenetic && boardListener != null) boardListener.onMessageToShow(message);
                             if(changeToGenetic) {
                                 futureResult.complete(null);
-                                swapPredictionAlgo(true);
+                                swapPredictionAlgo(true,true);
                                 startPredicting(PredictionAlgo.GENETIC_ALGO);
                             }
                         });
@@ -746,7 +752,7 @@ public class GameBoard extends View {
                         futureResult.complete(yx);
                     }
                 })
-                .predict(currentBoard,N, lastClickedCell);
+                .predict(currentBoard,N, lastClickedCell, (fixedPredictionAlgo != null));
 
         try {
             futureResult.get();
@@ -778,7 +784,7 @@ public class GameBoard extends View {
                             if(boardListener != null) boardListener.onMessageToShow(message);
                             if(changeToAlphaBeta) {
                                 futureResult.complete(null);
-                                swapPredictionAlgo(true);
+                                swapPredictionAlgo(true, true);
                                 startPredicting(PredictionAlgo.ALPHA_BETA_PRUNING);
                             }
                         });
@@ -817,7 +823,7 @@ public class GameBoard extends View {
 
     public interface BoardListener{
         void onMessageToShow(String message);
-        void onAlgoChanged();
+        void onAlgoChanged(boolean showToast);
         void onGameEnds(CellState.MyColor winner);
         void onSoundPlayRequest(SoundController.SoundType soundType);
         void onProgressBarUpdate(boolean show);

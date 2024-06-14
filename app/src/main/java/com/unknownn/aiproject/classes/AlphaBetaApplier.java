@@ -64,7 +64,7 @@ public class AlphaBetaApplier {
                 }
 
                 final long curTime = System.currentTimeMillis();
-                if(curTime - startTime > TIME_THRESHOLD){ // enough. Stop now
+                if(!isAlgoFixed && (curTime - startTime > TIME_THRESHOLD) ){ // enough. Stop now
                     timerTracker.cancel();
                     timerTracker = null;
                     stoppedByTLE = true;
@@ -76,10 +76,12 @@ public class AlphaBetaApplier {
 
     private final AtomicInteger botProgressInt = new AtomicInteger(Integer.MIN_VALUE);
     private volatile CellState lastClickedCell = null;
-    public void predict(final CellState.MyColor[][] fieldItOnly, int N, CellState lastClickedCell){
+    private boolean isAlgoFixed = false;
+    public void predict(final CellState.MyColor[][] fieldItOnly, int N, CellState lastClickedCell, boolean isAlgoFixed){
         this.N = N;
         this.N_N = N*N;
         this.lastClickedCell = lastClickedCell;
+        this.isAlgoFixed = isAlgoFixed;
 
         if(services == null){
             services = Executors.newFixedThreadPool(N_N);
