@@ -1,5 +1,6 @@
 package com.unknownn.aiproject;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -18,8 +19,10 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class HomeScreen extends AppCompatActivity {
 
-    ImageButton btn_play;
+    ImageButton btn_play,btn_sound,btn_debug;
+    Boolean isSoundOn = true;
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,13 +35,15 @@ public class HomeScreen extends AppCompatActivity {
         });
 
         btn_play = findViewById(R.id.btn_play);
+        btn_sound = findViewById(R.id.btn_sound);
+        btn_debug = findViewById(R.id.btn_debug);
 
 
         Spinner difficultySpinner = findViewById(R.id.difficulty_spinner);
 
         // Create an ArrayAdapter using the string array and a default spinner layout
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.difficulty_levels, R.layout.custom_text);
+                R.array.difficulty_levels,R.layout.custom_text);
 
         // Specify the layout to use when the list of choices appears
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -66,6 +71,29 @@ public class HomeScreen extends AppCompatActivity {
                 Intent intent = new Intent(HomeScreen.this, MainActivity.class);
                 startActivity(intent);
 
+            }
+        });
+
+        btn_sound.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(isSoundOn){
+                    btn_sound.setImageResource(R.drawable.sound_off_orange_removebg);
+                    isSoundOn = false;
+                    Toast.makeText(HomeScreen.this,"Sound:OFF",Toast.LENGTH_SHORT).show();
+                }
+                else{
+                    btn_sound.setImageResource(R.drawable.sound_on_orange_removebg);
+                    isSoundOn = true;
+                    Toast.makeText(HomeScreen.this,"Sound:ON",Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        btn_debug.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(HomeScreen.this,"Debug button",Toast.LENGTH_SHORT).show();
             }
         });
 
