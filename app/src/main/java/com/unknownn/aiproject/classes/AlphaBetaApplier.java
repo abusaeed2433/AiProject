@@ -195,7 +195,7 @@ public class AlphaBetaApplier {
             }
 
             field[x][y] = CellState.MyColor.BLUE;
-            int moveVal = applyAlphaBeta(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            final int moveVal = applyAlphaBeta(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
             field[x][y] = CellState.MyColor.BLANK;
 
             if(stoppedByTLE) return;
