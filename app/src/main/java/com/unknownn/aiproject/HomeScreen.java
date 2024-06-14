@@ -19,7 +19,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class HomeScreen extends AppCompatActivity {
 
-    ImageButton btn_play,btn_sound;
+    ImageButton btn_play,btn_sound,btn_debug;
     Boolean isSoundOn = true;
 
     @SuppressLint("MissingInflatedId")
@@ -36,6 +36,7 @@ public class HomeScreen extends AppCompatActivity {
 
         btn_play = findViewById(R.id.btn_play);
         btn_sound = findViewById(R.id.btn_sound);
+        btn_debug = findViewById(R.id.btn_debug);
 
 
         Spinner difficultySpinner = findViewById(R.id.difficulty_spinner);
@@ -79,11 +80,20 @@ public class HomeScreen extends AppCompatActivity {
                 if(isSoundOn){
                     btn_sound.setImageResource(R.drawable.sound_off_orange_removebg);
                     isSoundOn = false;
+                    Toast.makeText(HomeScreen.this,"Sound:OFF",Toast.LENGTH_SHORT).show();
                 }
                 else{
                     btn_sound.setImageResource(R.drawable.sound_on_orange_removebg);
                     isSoundOn = true;
+                    Toast.makeText(HomeScreen.this,"Sound:ON",Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        btn_debug.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(HomeScreen.this,"Debug button",Toast.LENGTH_SHORT).show();
             }
         });
 
