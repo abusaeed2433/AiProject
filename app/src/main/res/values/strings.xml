@@ -3,4 +3,7 @@
     <string name="not_started_yet">Not started yet</string>
     <string name="alpha_beta">Alpha Beta</string>
     <string name="genetic_algo">Genetic Algo</string>
+    <string name="your_move">Your Move</string>
+    <string name="bot_move">Bot Move</string>
+
 </resources>

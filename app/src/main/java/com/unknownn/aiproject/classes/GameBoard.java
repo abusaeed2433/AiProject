@@ -149,7 +149,8 @@ public class GameBoard extends View {
 
         // whose turn color
         if(circleCenter.x != 0) {
-            canvas.drawCircle(circleCenter.x, circleCenter.y, circleRadius, redTurn ? redBrush : blueBrush);
+            canvas.drawText("Your move",circleCenter.x, circleCenter.y,textBrush);
+//            canvas.drawCircle(circleCenter.x, circleCenter.y, circleRadius, redTurn ? redBrush : blueBrush);
         }
 
         // vertical boundary
@@ -215,6 +216,7 @@ public class GameBoard extends View {
                 lastClickedCell = clickedCell;
 
                 redTurn = !redTurn;
+                if(boardListener != null) boardListener.showWhoseMove(redTurn);
                 isTheFirstMove = false;
                 invalidate();
                 checkForGameOver(true);
@@ -232,6 +234,7 @@ public class GameBoard extends View {
         }
 
         redTurn = !redTurn;
+        if(boardListener != null) boardListener.showWhoseMove(redTurn);
         if(redTurn){
             isTheFirstMove = false;
         }
@@ -511,17 +514,17 @@ public class GameBoard extends View {
         circleCenter.x = (int)( (left+right)/2f);
         circleCenter.y = (int)( (top+bottom)/2f );
 
-        ValueAnimator animator = ValueAnimator.ofFloat(circleRadius*0.8f, circleRadius);
-        animator.setDuration(1500L);
-        animator.setInterpolator(new LinearInterpolator());
-
-        animator.addUpdateListener(valueAnimator -> {
-            circleRadius = (float) valueAnimator.getAnimatedValue();
-            invalidate();
-        });
-        animator.setRepeatCount(ValueAnimator.INFINITE);
-        animator.setRepeatMode(ValueAnimator.REVERSE);
-        animator.start();
+//        ValueAnimator animator = ValueAnimator.ofFloat(circleRadius*0.8f, circleRadius);
+//        animator.setDuration(1500L);
+//        animator.setInterpolator(new LinearInterpolator());
+//
+//        animator.addUpdateListener(valueAnimator -> {
+//            circleRadius = (float) valueAnimator.getAnimatedValue();
+//            invalidate();
+//        });
+//        animator.setRepeatCount(ValueAnimator.INFINITE);
+//        animator.setRepeatMode(ValueAnimator.REVERSE);
+//        animator.start();
     }
 //    private void initBotProgressPoint(){
 //        int width = getWidth();
@@ -544,6 +547,7 @@ public class GameBoard extends View {
 
     public void restart(){
         redTurn = true;
+        if(boardListener != null) boardListener.showWhoseMove(redTurn);
         isTheFirstMove = true;
         for(CellState[] row : states){
             for(CellState cell : row){
@@ -700,8 +704,11 @@ public class GameBoard extends View {
                 states[x][y].setMyColor(CellState.MyColor.BLUE);
                 processForAnimation(states[x][y], false);
 
-                if(boardListener != null) boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
                 redTurn = !redTurn;
+                if(boardListener != null) {
+                    boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
+                    boardListener.showWhoseMove(redTurn);
+                }
             }, delay);
         });
     }
@@ -827,6 +834,7 @@ public class GameBoard extends View {
     public interface BoardListener{
         void onMessageToShow(String message);
         void onAlgoChanged(boolean showToast);
+        void showWhoseMove(boolean userMove);
         void onGameEnds(CellState.MyColor winner);
         void onSoundPlayRequest(SoundController.SoundType soundType);
         void onProgressBarUpdate(boolean show);

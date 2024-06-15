@@ -16,8 +16,6 @@ import com.unknownn.aiproject.classes.SoundController;
 import com.unknownn.aiproject.databinding.ActivityMainBinding;
 import com.unknownn.aiproject.enums.PredictionAlgo;
 
-import java.io.UTFDataFormatException;
-
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding = null;
@@ -85,6 +83,13 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
+            public void showWhoseMove(boolean userMove) {
+                binding.tvWhoseMove.setText(
+                        userMove ? getString(R.string.your_move) : getString(R.string.bot_move)
+                );
+            }
+
+            @Override
             public void onGameEnds(CellState.MyColor winner) {
                 String strWinner = (winner == CellState.MyColor.RED) ? "You" : "Bot";
 
@@ -116,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
             public void onProgressUpdate(String strProgress) {
                 binding.myConfuseBar.setStrProgress(strProgress);
             }
+
         });
     }
 
