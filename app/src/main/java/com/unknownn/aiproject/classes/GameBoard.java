@@ -17,7 +17,6 @@ import android.os.Looper;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,10 +39,10 @@ public class GameBoard extends View {
     public static final float STROKE_WIDTH = 4f;
     public static final float BOUNDARY_GAP = 12f;
     private static final boolean debugMode = true;
-    private static final int N = 5;
-    private static final int N_N = 25;
+    private static int N = 5;
+    private static int N_N = 25;
 
-    private final CellState[][] states = new CellState[N][N];
+    private CellState[][] states = null;
 
     private final Paint gridBrush = new Paint();
     private final Paint blueBrush = new Paint();
@@ -66,32 +65,22 @@ public class GameBoard extends View {
     private final Path horizPath = new Path();
     private final Path vertPath = new Path();
 
-    // for whose move
-    private float circleRadius = 0f;
-    private final Point circleCenter = new Point(0,0);
-    // for bot progress
-
     private PredictionAlgo predictionAlgo = PredictionAlgo.ALPHA_BETA_PRUNING;
 
-    private final Cell[][] selectedBoardFromGenetic = new Cell[N][N];
+    private Cell[][] selectedBoardFromGenetic = null;
     private Cell cellToAnimate = null;
     private final Path[] intermediatePaths = new Path[NO_OF_INTERMEDIATE_PATHS];
     private int animateIndex = 0;
+    private boolean isReady = false;
 
     public GameBoard(Context context) {
         super(context);
-        if( isInEditMode() ) return;
-
-        initBrush();
-        initStates();
+//        initBrush();
+//        initStates();
     }
 
     public GameBoard(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        if(isInEditMode()) return;
-
-        initBrush();
-        initStates();
     }
 
     public void setBoardListener(BoardListener boardListener) {
@@ -101,6 +90,8 @@ public class GameBoard extends View {
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
+
+        if(!isReady) return;
 
 
         for(int i=0; i<N; i++){
@@ -145,12 +136,6 @@ public class GameBoard extends View {
                     );
                 }
             }
-        }
-
-        // whose turn color
-        if(circleCenter.x != 0) {
-            canvas.drawText("Your move",circleCenter.x, circleCenter.y,textBrush);
-//            canvas.drawCircle(circleCenter.x, circleCenter.y, circleRadius, redTurn ? redBrush : blueBrush);
         }
 
         // vertical boundary
@@ -242,6 +227,19 @@ public class GameBoard extends View {
 //        checkForGameOver(true);
     }
 
+    public void drawBoard(int n){
+        isReady = true;
+
+        N = n;
+        N_N = n*n;
+
+        states = new CellState[N][N];
+        selectedBoardFromGenetic = new Cell[N][N];
+
+        initBrush();
+        initStates();
+    }
+
     private void initBrush(){
         final Paint[] brushes = new Paint[]{ gridBrush, redBrush, lightRedBrush, blueBrush, lightBlueBrush, boundaryBrush };
 
@@ -307,10 +305,10 @@ public class GameBoard extends View {
             }
 
             setUpAnimator();
-            initWhoseMovePath();
             initTwoBoundaries();
-            // initBotProgressPoint();
+
             invalidate();
+            isReady = true;
         });
     }
 
@@ -497,46 +495,6 @@ public class GameBoard extends View {
             horizPath.lineTo(point2.x, point2.y + BOUNDARY_GAP);
         }
     }
-
-    private void initWhoseMovePath(){
-        int width = getWidth();
-        int height = getHeight();
-
-        float left = width * 0.02f;//0.9f;
-        float right = width * 0.06f;//0.92f;
-        float top = height * 0.04f;
-        float bottom = height * 0.08f;
-
-        float rad1 = right-left;
-        float rad2 = bottom - top;
-
-        circleRadius = Math.min(rad1,rad2);
-        circleCenter.x = (int)( (left+right)/2f);
-        circleCenter.y = (int)( (top+bottom)/2f );
-
-//        ValueAnimator animator = ValueAnimator.ofFloat(circleRadius*0.8f, circleRadius);
-//        animator.setDuration(1500L);
-//        animator.setInterpolator(new LinearInterpolator());
-//
-//        animator.addUpdateListener(valueAnimator -> {
-//            circleRadius = (float) valueAnimator.getAnimatedValue();
-//            invalidate();
-//        });
-//        animator.setRepeatCount(ValueAnimator.INFINITE);
-//        animator.setRepeatMode(ValueAnimator.REVERSE);
-//        animator.start();
-    }
-//    private void initBotProgressPoint(){
-//        int width = getWidth();
-//        int height = getHeight();
-//
-//        float x = width * 0.10f;
-//        float y = height * 0.90f;
-//
-//        botProgressCenter.x = (int)x;
-//        botProgressCenter.y = (int)y;
-//    }
-
 
     private PredictionAlgo fixedPredictionAlgo = null;
     public void fixPredictionAlgo(PredictionAlgo algo){

@@ -53,14 +53,18 @@ public class MainActivity extends AppCompatActivity {
     private void setupBoard(HomeScreen.Difficulty difficulty){
         soundController = SoundController.getInstance(this);
 
+        int N = 5;
         switch (difficulty){
             case EASY -> {
+                N = 7;
                 binding.gameBoard.fixPredictionAlgo(PredictionAlgo.GENETIC_ALGO); // use both GA
                 binding.tvAlgoType.setText(getString(R.string.genetic_algo));
             }
             case MEDIUM -> binding.gameBoard.fixPredictionAlgo(null); // use both AB, GA
             case HARD -> binding.gameBoard.fixPredictionAlgo(PredictionAlgo.ALPHA_BETA_PRUNING); // use both AB
         }
+
+        binding.gameBoard.drawBoard(N);
 
         binding.gameBoard.setBoardListener(new GameBoard.BoardListener() {
             @Override
