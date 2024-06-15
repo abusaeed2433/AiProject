@@ -664,9 +664,12 @@ public class GameBoard extends View {
                 algo = FuzzyApplier
                         .getInstance()
                         .predictAlgo(N_N, countEmptyCell(), prevTimeTaken);
+
+                if(fixedPredictionAlgo != null) {
+                    algo = fixedPredictionAlgo;
+                }
             }
 
-            if(fixedPredictionAlgo != null) algo = fixedPredictionAlgo;
             setPredictionAlgo(algo,false);
 
             Pair<Integer,Integer> xy = (predictionAlgo == PredictionAlgo.ALPHA_BETA_PRUNING )

@@ -47,16 +47,16 @@ public class FuzzyApplier {
 
     private AlphaBetaTimeR checkAlphaBetaTime(double val){
         double leftOne, leftTwo, midOne, midTwo;
-        leftOne = 8;
-        leftTwo = 12;
-        midOne = 22;
-        midTwo = 28;
+        leftOne = 5;
+        leftTwo = 7;
+        midOne = 15;
+        midTwo = 20;
 
         if(val <= leftOne){
             return new AlphaBetaTimeR(1,0,0);
         }
 
-        if(val < leftTwo){ // 0.3 to 0.4
+        if(val < leftTwo){
             double low = (leftTwo - val) / (leftTwo - leftOne);
             double medium = (val - leftOne)/(leftTwo - leftOne);
 
@@ -67,7 +67,7 @@ public class FuzzyApplier {
             return new AlphaBetaTimeR(0,1,0);
         }
 
-        if(val < midTwo){ // .6 to .7
+        if(val < midTwo){
             double medium = (midTwo - val) / (midTwo - midOne);
             double high = (val - midOne) / (midTwo - midOne);
             return new AlphaBetaTimeR(0,medium,high);
