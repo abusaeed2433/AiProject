@@ -24,6 +24,7 @@
             android:name=".SplashScreen"
             android:exported="true"
             android:screenOrientation="landscape"
+            android:theme="@style/fullScreenActivity"
             tools:ignore="DiscouragedApi">
 
             <intent-filter>

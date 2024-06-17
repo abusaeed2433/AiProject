@@ -54,7 +54,7 @@ public class AlphaBetaApplier {
         final int[] percent = new int[]{botProgressInt.get()};
 
         timerTracker = new Timer();
-        timerTracker.scheduleAtFixedRate(new TimerTask() {
+        timerTracker.schedule(new TimerTask() {
             @Override
             public void run() {
                 final int curPercent = botProgressInt.get();
