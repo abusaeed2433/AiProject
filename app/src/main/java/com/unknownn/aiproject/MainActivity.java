@@ -2,6 +2,7 @@ package com.unknownn.aiproject;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -9,12 +10,20 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
+import com.unknownn.aiproject.classes.AlphaBetaApplier;
 import com.unknownn.aiproject.classes.CellState;
+import com.unknownn.aiproject.classes.FuzzyApplier;
 import com.unknownn.aiproject.classes.GameBoard;
+import com.unknownn.aiproject.classes.GeneticApplier;
 import com.unknownn.aiproject.classes.Helper;
 import com.unknownn.aiproject.classes.SoundController;
 import com.unknownn.aiproject.databinding.ActivityMainBinding;
 import com.unknownn.aiproject.enums.PredictionAlgo;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,9 +49,10 @@ public class MainActivity extends AppCompatActivity {
         final Intent intent = getIntent();
 
         final String strLevel = intent.getStringExtra("difficulty_mode");
+        final boolean debugMode = intent.getBooleanExtra("debug_mode",true);
         HomeScreen.Difficulty difficulty = HomeScreen.Difficulty.valueOf(strLevel);
 
-        setupBoard(difficulty);
+        setupBoard(difficulty,debugMode);
         setClickListener();
     }
 
@@ -50,7 +60,12 @@ public class MainActivity extends AppCompatActivity {
 //        binding.tvAlgoType.setOnClickListener( v -> binding.gameBoard.swapPredictionAlgo(false));
     }
 
-    private void setupBoard(HomeScreen.Difficulty difficulty){
+    private void setupBoard(HomeScreen.Difficulty difficulty, boolean debugMode){
+
+        GeneticApplier.destroy();
+        AlphaBetaApplier.destroy();
+        FuzzyApplier.destroy();
+
         soundController = SoundController.getInstance(this);
 
         int N = 5;
@@ -65,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         binding.gameBoard.drawBoard(N);
+        binding.gameBoard.setDebugMode(debugMode);
 
         binding.gameBoard.setBoardListener(new GameBoard.BoardListener() {
             @Override
@@ -127,6 +143,46 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+
+        final ExecutorService service = Executors.newFixedThreadPool(5);
+
+        AlphaBetaApplier.getInstance().setPreSavedListener((strBoard, score) -> {
+            service.submit(() -> {
+                final SharedPreferences sp = getSharedPreferences("sp",MODE_PRIVATE);
+
+                if(sp.contains(strBoard)) return;
+
+                final int size = sp.getInt("size",0);
+                final SharedPreferences.Editor editor = sp.edit();
+
+                editor.putInt(strBoard, score);
+                editor.putString((size+1)+"", strBoard);
+                editor.putInt("size",size+1);
+
+                editor.apply();
+            });
+        }, getPreSavedScore());
     }
+
+    private Map<String, Integer> getPreSavedScore(){
+        final Map<String,Integer> scoreMap = new HashMap<>();
+
+        final SharedPreferences sp = getSharedPreferences("sp",MODE_PRIVATE);
+        final int size = sp.getInt("size",0);
+
+        for(int i=1; i<=size; i++){
+            final String key = sp.getString((i+1)+"", null);
+            if(key == null) continue;
+
+            final int value = sp.getInt(key,0);
+            if(value == 0) continue;
+
+            scoreMap.put(key,value);
+        }
+
+        return scoreMap;
+    }
+
+
 
 }

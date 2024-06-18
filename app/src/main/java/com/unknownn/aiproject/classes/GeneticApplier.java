@@ -32,6 +32,8 @@ public class GeneticApplier {
         return instance;
     }
 
+    public static void destroy(){ instance = null; }
+
     private GeneticApplier() {}
 
     private GeneticListener geneticListener = null;

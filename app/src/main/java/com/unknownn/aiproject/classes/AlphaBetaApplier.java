@@ -6,7 +6,9 @@ import static com.unknownn.aiproject.classes.Calculator.WIN;
 import com.unknownn.aiproject.listener.AlphaBetaListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -46,6 +48,8 @@ public class AlphaBetaApplier {
         this.alphaBetaListener = alphaBetaListener;
         return this;
     }
+
+    public static void destroy(){ instance = null; }
 
     private boolean stoppedByTLE = false;
     private Timer timerTracker = null;
@@ -126,7 +130,16 @@ public class AlphaBetaApplier {
         if(stoppedByTLE) return 0;
 
         if( depth >= DEPTH_LIMIT ) {
-            return Calculator.getBoardScore(field,N);
+
+            final String strBoard = Helper.convertBoardToString(field,N);
+            Integer score = boardMapScore.getOrDefault(strBoard,null);
+            if(score != null) {
+                return score;
+            }
+
+            int myScore = Calculator.getBoardScore(field,N);
+            if(savedListener != null) savedListener.onSaveRequest(strBoard, myScore);
+            return myScore;
         }
 
         final CellState.MyColor winner = Calculator.getGameWinner(field,N);
@@ -242,5 +255,15 @@ public class AlphaBetaApplier {
         return emptyCount; // critical
     }
 
+    private PreSavedListener savedListener = null;
+    private Map<String, Integer> boardMapScore = new HashMap<>();
+    public void setPreSavedListener(PreSavedListener savedListener, Map<String, Integer> boardMapScore){
+        this.savedListener = savedListener;
+        this.boardMapScore = boardMapScore;
+    }
+
+    public interface PreSavedListener{
+        void onSaveRequest(String strBoard, int score);
+    }
 
 }

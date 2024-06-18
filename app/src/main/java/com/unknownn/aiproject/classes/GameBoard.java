@@ -38,7 +38,7 @@ public class GameBoard extends View {
     private static final int NO_OF_INTERMEDIATE_PATHS = 20;
     public static final float STROKE_WIDTH = 4f;
     public static final float BOUNDARY_GAP = 12f;
-    private static final boolean debugMode = true;
+    private boolean debugMode = true;
     private static int N = 5;
     private static int N_N = 25;
 
@@ -502,6 +502,10 @@ public class GameBoard extends View {
         this.predictionAlgo = algo;
     }
 
+    public void setDebugMode(boolean debugMode) {
+        this.debugMode = debugMode;
+        invalidate();
+    }
 
     public void restart(){
         redTurn = true;

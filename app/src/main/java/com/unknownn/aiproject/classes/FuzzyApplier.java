@@ -14,6 +14,8 @@ public class FuzzyApplier {
         return instance;
     }
 
+    public static void destroy(){ instance = null; }
+
     private NoOfEmptyCellR checkNoOfEmptyCell(double val, final int N){
         double leftOne, leftTwo, midOne, midTwo;
         leftOne = 0.4 * N;
