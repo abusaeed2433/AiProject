@@ -17,13 +17,14 @@
             android:name=".HomeScreen"
             android:exported="false"
             android:screenOrientation="landscape"
-            >
+            tools:ignore="DiscouragedApi">
         </activity>
 
         <activity
             android:name=".SplashScreen"
             android:exported="true"
             android:screenOrientation="landscape"
+            android:noHistory="true"
             android:theme="@style/fullScreenActivity"
             tools:ignore="DiscouragedApi">
 

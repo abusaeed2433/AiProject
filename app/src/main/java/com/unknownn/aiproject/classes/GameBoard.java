@@ -660,7 +660,7 @@ public class GameBoard extends View {
                 }
             });
 
-            long delay = (dif > 1000) ? 0L : 500L;
+            long delay = (dif > 2000) ? 0L : (2000L - dif); // will take at least 2 seconds
 
             mHandler.postDelayed(() -> {
                 states[x][y].setMyColor(CellState.MyColor.BLUE);

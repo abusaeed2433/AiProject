@@ -67,7 +67,7 @@ public class MyTextView extends androidx.appcompat.widget.AppCompatTextView {
                     endPosition = middle + getWidth() * percent;
                     invalidate();
                 });
-                animator.setDuration(1000);
+                animator.setDuration(700);
 
                 final ValueAnimator alphaAnimator = ValueAnimator.ofInt(60,160);
                 alphaAnimator.addUpdateListener(valueAnimator -> {

@@ -13,5 +13,9 @@
     <string name="debug_mode">Debug Mode: </string>
     <string name="debug_mode_ph">Debug Mode: %1$s</string>
     <string name="on">ON</string>
+    <string name="game_over">Game over</string>
+    <string name="you_won">You won</string>
+    <string name="you_lose">You lose</string>
+    <string name="refresh">Refresh</string>
 
 </resources>

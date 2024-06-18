@@ -1,9 +1,13 @@
 package com.unknownn.aiproject;
 
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
+import android.view.Window;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
@@ -18,6 +22,7 @@ import com.unknownn.aiproject.classes.GeneticApplier;
 import com.unknownn.aiproject.classes.Helper;
 import com.unknownn.aiproject.classes.SoundController;
 import com.unknownn.aiproject.databinding.ActivityMainBinding;
+import com.unknownn.aiproject.databinding.GameOverLayoutBinding;
 import com.unknownn.aiproject.enums.PredictionAlgo;
 
 import java.util.HashMap;
@@ -54,6 +59,8 @@ public class MainActivity extends AppCompatActivity {
 
         setupBoard(difficulty,debugMode);
         setClickListener();
+
+        //showGameOver(false);
     }
 
     private void setClickListener(){
@@ -111,15 +118,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onGameEnds(CellState.MyColor winner) {
-                String strWinner = (winner == CellState.MyColor.RED) ? "You" : "Bot";
-
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Game Over")
-                        .setMessage(strWinner+" won.")
-                        .setPositiveButton("Restart", (dialogInterface, i) -> binding.gameBoard.restart())
-                        .setNegativeButton("Exit", (dialogInterface, i) -> MainActivity.this.finishAffinity())
-                        .setCancelable(false)
-                        .show();
+                showGameOver((winner == CellState.MyColor.RED));
             }
 
             @Override
@@ -164,6 +163,38 @@ public class MainActivity extends AppCompatActivity {
         }, getPreSavedScore());
     }
 
+    private void showGameOver(boolean haveIWon){
+        final Dialog dialog = new Dialog(this);
+        final GameOverLayoutBinding bindingDialog = GameOverLayoutBinding.inflate(LayoutInflater.from(this));
+        dialog.setContentView(bindingDialog.getRoot());
+
+        final Window window = dialog.getWindow();
+        if(window != null){
+            window.setBackgroundDrawable(new ColorDrawable(0));
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+//            window.setWindowAnimations(R.style.dialogAnimation);
+        }
+
+        bindingDialog.tvMyStatus.setText( (haveIWon) ? getString(R.string.you_won) : getString(R.string.you_lose) );
+
+        if(haveIWon){
+            bindingDialog.lottieAnimationView.setAnimation(R.raw.lottie_winner);
+        }
+
+        bindingDialog.ivHome.setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
+        bindingDialog.ivRetry.setOnClickListener(v ->{
+            dialog.dismiss();
+            binding.gameBoard.restart();
+        });
+
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+    }
+
     private Map<String, Integer> getPreSavedScore(){
         final Map<String,Integer> scoreMap = new HashMap<>();
 
@@ -182,7 +213,5 @@ public class MainActivity extends AppCompatActivity {
 
         return scoreMap;
     }
-
-
 
 }
