@@ -130,16 +130,7 @@ public class AlphaBetaApplier {
         if(stoppedByTLE) return 0;
 
         if( depth >= DEPTH_LIMIT ) {
-
-            final String strBoard = Helper.convertBoardToString(field,N);
-            Integer score = boardMapScore.getOrDefault(strBoard,null);
-            if(score != null) {
-                return score;
-            }
-
-            int myScore = Calculator.getBoardScore(field,N);
-            if(savedListener != null) savedListener.onSaveRequest(strBoard, myScore);
-            return myScore;
+            return Calculator.getBoardScore(field,N);
         }
 
         final CellState.MyColor winner = Calculator.getGameWinner(field,N);
@@ -210,7 +201,18 @@ public class AlphaBetaApplier {
             }
 
             field[x][y] = CellState.MyColor.BLUE;
-            final int moveVal = applyAlphaBeta(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+
+            // checking if result is already available
+            final String strBoard = Helper.convertBoardToString(field,N);
+            Integer savedScore = boardMapScore.getOrDefault(strBoard,null);
+
+            int moveVal;
+            if(savedScore == null){
+                moveVal = applyAlphaBeta(field,0, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+                if(savedListener != null) savedListener.onSaveRequest(strBoard, moveVal);
+            }
+            else{ moveVal = savedScore; }
+
             field[x][y] = CellState.MyColor.BLANK;
 
             if(stoppedByTLE) return;
