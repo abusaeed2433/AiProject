@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -60,7 +62,17 @@ public class MainActivity extends AppCompatActivity {
         setupBoard(difficulty,debugMode);
         setClickListener();
 
+        //preCalc();
         //showGameOver(false);
+    }
+
+    private void preCalc(){
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                binding.gameBoard.preCalc();
+            }
+        },5000L);
     }
 
     private void setClickListener(){
@@ -152,6 +164,8 @@ public class MainActivity extends AppCompatActivity {
                 if(sp.contains(strBoard)) return;
 
                 final int size = sp.getInt("size",0);
+                System.out.println("Current size is: "+size);
+
                 final SharedPreferences.Editor editor = sp.edit();
 
                 editor.putInt(strBoard, score);

@@ -188,6 +188,10 @@ public class GameBoard extends View {
 
         if(clickedCell == null) return;
 
+        continueProcessing(clickedCell);
+    }
+
+    private void continueProcessing(CellState clickedCell){
         if( !redTurn ) {
             if(boardListener != null) boardListener.onMessageToShow("Wait for bot move");
             return;
@@ -588,6 +592,44 @@ public class GameBoard extends View {
         return new Hexagon(leftTop, topMiddle, rightTop, rightBottom, bottomMiddle, leftBottom);
     }
 
+    //private PreListener preListener;
+    private int x, y;
+    public void preCalc(){
+        x = y = 0;
+
+        PreListener preListener = new PreListener() {
+            @Override
+            public void onEnd() {
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        restart();
+                        System.out.println("Running on "+x+" "+y);
+                        y++;
+                        if(y == N){
+                            y = 0;
+                            x++;
+                        }
+                        if(x >= N && y >= N) return;
+                        startPre(x,y);
+                    }
+                },2000L);
+            }
+        };
+        startPre(0,0);
+    }
+    private void startPre(int x, int y){
+        if(x >= N || y >= N) {
+            //preListener.onEnd();
+            return;
+        };
+
+        continueProcessing(states[x][y]);
+    }
+    private interface PreListener{
+        void onEnd();
+    }
+
     private CellState.MyColor[][] getCurrentBoard(){
         final CellState.MyColor[][] field = new CellState.MyColor[N][N];
         for(int x=0; x<N; x++){
@@ -669,6 +711,8 @@ public class GameBoard extends View {
                 redTurn = !redTurn;
                 if(boardListener != null) {
                     boardListener.onSoundPlayRequest(SoundController.SoundType.MOVE_DONE);
+                    //preListener.onEnd();
+
                     boardListener.showWhoseMove(redTurn);
                 }
             }, delay);

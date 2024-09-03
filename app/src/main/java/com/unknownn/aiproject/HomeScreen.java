@@ -57,6 +57,7 @@ public class HomeScreen extends AppCompatActivity {
             binding.tvDebugMode.setText( debugMode ? "ON" : "OFF" );
         });
 
+
         binding.tvEasy.setOnClickListener(v -> {
             diffLevel = EASY;
             animateTV(binding.tvEasy);

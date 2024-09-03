@@ -17,5 +17,8 @@
     <string name="you_won">You won</string>
     <string name="you_lose">You lose</string>
     <string name="refresh">Refresh</string>
+    <string name="pre_calc">Pre calculated</string>
+    <string name="_0">0</string>
+    <string name="start">Start</string>
 
 </resources>

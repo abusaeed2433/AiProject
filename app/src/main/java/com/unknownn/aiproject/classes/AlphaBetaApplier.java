@@ -246,6 +246,8 @@ public class AlphaBetaApplier {
             }
         }
 
+        if( (N_N - emptyCount) < 3) return (N_N - emptyCount);
+
         int emptyPercent = (100 * emptyCount) / N_N;
 
         if(emptyPercent > 70) return emptyCount/6; // early
