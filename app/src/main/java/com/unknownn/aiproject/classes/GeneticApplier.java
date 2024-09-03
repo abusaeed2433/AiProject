@@ -239,14 +239,38 @@ public class GeneticApplier {
         return winner == CellState.MyColor.BLUE;
     }
 
-    private Pair<Integer,Integer> chooseTheBestCellToPlace(List<Cell> solution){
+    private CellState.MyColor[][] copyBoard(CellState.MyColor[][] board){
+        final CellState.MyColor[][] copiedBoard = new CellState.MyColor[N][N];
+
+        for(int x=0; x<N; x++){
+            System.arraycopy(board[x], 0, copiedBoard[x], 0, N);
+        }
+        return copiedBoard;
+    }
+
+    private Pair<Integer,Integer> chooseTheBestCellToPlace(CellState.MyColor[][] board, List<Cell> solution){
+        int score = Integer.MIN_VALUE;
+        Cell bestCell = null;
+
         for(Cell cell : solution){
             if(cell.myColor == CellState.MyColor.BLUE){
-                solution.remove(cell);
-                return new Pair<>(cell.x, cell.y);
+
+                CellState.MyColor[][] copied = copyBoard(board);
+                copied[cell.x][cell.y] = CellState.MyColor.BLUE;
+
+                int curScore = Calculator.getBoardScore(copied, N);
+                if(curScore > score){
+                    score = curScore;
+                    bestCell = cell;
+                    System.out.println("Best score is: "+score);
+                }
             }
         }
-        return null;
+
+        solution.remove(bestCell);
+        if(bestCell == null) return null;
+
+        return new Pair<>(bestCell.x, bestCell.y);
     }
 
     private List<Cell> prevBestSolution = null;
@@ -261,7 +285,7 @@ public class GeneticApplier {
             geneticListener.onDrawRequest(prevBestSolution);
 
 
-            final Pair<Integer,Integer> toPlace = chooseTheBestCellToPlace(prevBestSolution);
+            final Pair<Integer,Integer> toPlace = chooseTheBestCellToPlace(board, prevBestSolution);
             if(toPlace == null){
                 if(geneticListener != null) {
                     geneticListener.onError("Something went wrong",true);
@@ -317,7 +341,7 @@ public class GeneticApplier {
         geneticListener.onDrawRequest(globalBest);
 
 
-        final Pair<Integer,Integer> toPlace = chooseTheBestCellToPlace(globalBest);
+        final Pair<Integer,Integer> toPlace = chooseTheBestCellToPlace(board,globalBest);
         if(toPlace == null){
             if(geneticListener != null) {
                 geneticListener.onError("Something went wrong",true);
