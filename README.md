@@ -52,7 +52,7 @@ The game includes multiple difficulty levels, allowing players to choose the AI'
       <div align="center"><i>Gameplay5</i></div>
     </td>
     <td>
-      <img src="https://raw.githubusercontent.com/abusaeed2433/AiProject/main/snapshots/Music_Player.jpg" alt="Victory" width="400">
+      <img src="https://raw.githubusercontent.com/abusaeed2433/AiProject/main/snapshots/victory.jpg" alt="Victory" width="400">
       <div align="center"><i>Victory</i></div>
     </td>
   </tr>
